@@ -766,7 +766,7 @@ button{font:inherit}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin></script>
-<script src="shared-storage.js"></script>
+<script src="shared-storage.js?v=0.12.2-shared-test"></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const APP_VERSION = '0.12.2-shared-test';
@@ -4182,13 +4182,13 @@ function Einstellungen({ cfg, setCfg, cloud, go, toast, agentCfg, setAgentCfg })
   const agspeichern=()=>{setAgentCfg(ag);toast('Agent-Einstellungen gespeichert');};
   return <div><button className="btn ghost sm" onClick={()=>go({mode:'start'})}>← Start</button><p className="eyebrow" style={{marginTop:18}}>System</p><h2 className="sec">Einstellungen</h2>
     <Card titel="Microsoft / OneDrive"><div className={'statusbox '+(cloud.connected?'ok':'warn')}><div className="conn"><span className={'dot '+(cloud.connected?'ok':'warn')}></span><strong>{cloud.connected?'Mit Microsoft verbunden':'Noch nicht verbunden'}</strong></div>{cloud.user&&<p style={{marginBottom:0}}>{cloud.user.displayName} · {cloud.user.userPrincipalName}</p>}</div>
-      <p role="status">Mehrbenutzer TEST · gemeinsame Ablage; Microsoft-Einrichtung noch erforderlich.</p><div className="grid g2"><Txt l="Client-ID (Anwendungs-ID)" v={x.clientId} set={v=>s('clientId',v)} ph="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/><Txt l="Tenant" v={x.tenant} set={v=>s('tenant',v)} ph="organizations"/></div><div style={{marginTop:12}}><Txt l="OneDrive-Hauptordner" v={x.root} set={v=>s('root',v)} ph="Gutachten"/></div>
+      <p role="status">Mehrbenutzer TEST · gemeinsame SharePoint-Testablage.</p><div className="grid g2"><Txt l="Client-ID (Anwendungs-ID)" v={x.clientId} set={v=>s('clientId',v)} ph="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/><Txt l="Tenant" v={x.tenant} set={v=>s('tenant',v)} ph="organizations"/></div><div style={{marginTop:12}}><Txt l="OneDrive-Hauptordner" v={x.root} set={v=>s('root',v)} ph="Gutachten"/></div>
       <div className="grid g2" style={{marginTop:12}}><Txt l="Drive-ID der gemeinsamen Testbibliothek" v={x.driveId||''} set={v=>s('driveId',v)}/><Txt l="SharePoint-Site-ID" v={x.siteId||''} set={v=>s('siteId',v)}/><Txt l="Liste für gemeinsame Arbeitsstände (ID)" v={x.stateListId||''} set={v=>s('stateListId',v)}/></div><div className="codehint" style={{marginTop:12}}>Redirect-URI für die Microsoft-App-Registrierung:\n{msRedirectUri()}</div>
       <div className="conn" style={{marginTop:14}}><button className="btn ghost" onClick={speichern}>Einstellungen speichern</button>{!cloud.connected?<button className="btn sig" onClick={async()=>{if(!speichern())return;try{await microsoftLogin(x);}catch(e){toast(e.message)}}}>Mit Microsoft anmelden</button>:<button className="btn ghost" onClick={cloud.logout}>Microsoft abmelden</button>}</div>
     </Card>
-    <Card titel="Power Automate"><p>Produktive Word- und Terminflows werden von dieser Testversion nicht angesprochen. Die Einbindung separater Testflows ist noch offen.</p></Card>
+    <Card titel="Power Automate"><p>Produktive Word- und Terminflows werden von dieser Testversion nicht angesprochen. Word direkt ist an den separaten Mehrbenutzer-Testflow gebunden. Termin- und weitere KI-Aufträge bleiben gesperrt.</p></Card>
     <Card titel="KI-Agent / Automatisierung"><p style={{marginTop:0}}>Hier wird später nur die Webhook-Adresse deiner n8n-Automatisierung hinterlegt. KI-API-Schlüssel bleiben außerhalb dieser App.</p><Txt l="Automatisierungs-Endpunkt-URL" v={ag.webhookUrl||''} set={v=>setAg(Object.assign({},ag,{webhookUrl:v}))} ph="https://.../webhook/gutachten-agent"/><div style={{marginTop:12}}><Txt l="Optionaler Webhook-Schlüssel" v={ag.sharedSecret||''} set={v=>setAg(Object.assign({},ag,{sharedSecret:v}))} ph="optional"/></div><div className="conn" style={{marginTop:14}}><button className="btn ghost" onClick={agspeichern}>Agent-Einstellungen speichern</button></div></Card>
-    <Card titel="Berechtigungen"><p style={{marginTop:0}}>Die gemeinsame Testversion verwendet das Microsoft-Profil und Sites.Selected für eine gesondert freigegebene SharePoint-Site. Die neue App-Registrierung und Site-Freigabe sind vor dem ersten Live-Test separat einzurichten. Es werden keine Outlook-Berechtigungen in der App angefordert.</p></Card>
+    <Card titel="Berechtigungen"><p style={{marginTop:0}}>Die gemeinsame Testversion verwendet das Microsoft-Profil und Sites.Selected für eine gesondert freigegebene SharePoint-Site. Die Microsoft-App-Registrierung und die Freigabe der Test-Site wurden separat eingerichtet. Es werden keine Outlook-Berechtigungen in der App angefordert.</p></Card>
     <Card titel="Ablagestruktur"><p style={{marginTop:0}}>OneDrive-Hauptpfad:</p><div className="codehint">/{x.root||'Gutachten_Business'}/[offene Akten direkt] · 000_Tagesbesichtigung · 00_Besichtigt · 00_abgelegt/&lt;Schadenkategorie&gt;</div></Card>
   </div>;
 }
@@ -5883,7 +5883,7 @@ function App() {
             <div>
               <Start akten={akten} go={go} neu={() => setSheet(true)} cloud={cloud} syncCloud={syncCloudAkten} />
               <Card titel="Mehrbenutzer-Testversion">
-                <p>Getrennte Microsoft-Konten · gemeinsame Testablage. Word- und Terminaufträge an Power Automate sind gesperrt.</p>
+                <p>Getrennte Microsoft-Konten · gemeinsame Testablage. Word direkt wird über den separaten Testflow geprüft. Termin- und weitere KI-Aufträge bleiben gesperrt.</p>
                 {cloud.sharedError&&<p role="alert">{cloud.sharedError}</p>}
                 <p>{cloud.pendingDrafts().length} lokal gesicherte, noch nicht bestätigte Änderungen.</p>
                 <button className="btn ghost sm" onClick={()=>saveBlob(new Blob([JSON.stringify(cloud.pendingDrafts(),null,2)],{type:'application/json'}),'StudioF_ausstehende_Entwuerfe.json')}>Ausstehende Entwürfe sichern</button>
