@@ -2366,6 +2366,7 @@ function Rail({ akten, view, go, neu, versteckt }) {
       <span className="marker"/><span className="lbl">Aufträge · Assistenz</span>
     </button>
     <div className="rail-head" style={{marginTop:16}}>OneDrive-Ordner</div>
+    {folderLink('offen','Offene Akten','')}
     {folderLink('tagesbesichtigung','Tagesbesichtigung','')}
     {folderLink('besichtigt','Besichtigt','')}
     {folderLink('abgelegt','Abgelegt','▸')}
@@ -2379,6 +2380,7 @@ function Rail({ akten, view, go, neu, versteckt }) {
    ============================================================ */
 function Start({ akten, go, neu, cloud, syncCloud }) {
   const tiles=[
+    {key:'offen',label:'Offene Akten',path:'Gemeinsame Testablage',description:'Offene Aufträge und Ortsaugenschein direkt öffnen – auch ohne Besichtigungstermin.'},
     {key:'tagesbesichtigung',label:'Tagesbesichtigung',path:'000_Tagesbesichtigung',description:'Bestätigte Besichtigungen. Nach dem Ortsaugenschein den Akt abschließen.'},
     {key:'besichtigt',label:'Besichtigt',path:'00_Besichtigt',description:'Weitere Bearbeitung durch den Sachverständigen, Gutachten und Fristen.'},
     {key:'abgelegt',label:'Abgelegt',path:'00_abgelegt / Schadenkategorie',description:'Fertiggestellte Akten, nach Schadenkategorien geordnet.'}
@@ -2404,7 +2406,7 @@ function Start({ akten, go, neu, cloud, syncCloud }) {
 // Liest nur den gewählten OneDrive-Ordner ein – keine globale Liste sämtlicher Gutachten.
 function OrdnerAnsicht({folderKey,category,cloud,go,onOpen}) {
   const [rows,setRows]=useState([]),[categories,setCategories]=useState([]),[busy,setBusy]=useState(false),[openBusy,setOpenBusy]=useState(''),[error,setError]=useState('');
-  const label={tagesbesichtigung:'Tagesbesichtigung',besichtigt:'Besichtigt',abgelegt:'Abgelegt'}[folderKey]||'Arbeitsordner';
+  const label={offen:'Offene Akten',tagesbesichtigung:'Tagesbesichtigung',besichtigt:'Besichtigt',abgelegt:'Abgelegt'}[folderKey]||'Arbeitsordner';
   const lade=async()=>{
     if(!cloud.connected)return;
     setBusy(true);setError('');
@@ -5125,7 +5127,7 @@ function App() {
     return true;
   };
   const listStatusFolder=async(key,category='')=>{
-    if(!['tagesbesichtigung','besichtigt','abgelegt'].includes(key))throw new Error('Ungültiger Arbeitsordner.');
+    if(!['offen','tagesbesichtigung','besichtigt','abgelegt'].includes(key))throw new Error('Ungültiger Arbeitsordner.');
     await ensureBase();
     if(key==='abgelegt'&&!SCHADENARTEN.includes(category))throw new Error('Bitte zuerst eine gültige Schadenkategorie öffnen.');
     const path=cloudStatusPath(key)+(key==='abgelegt'?'/'+category:'');
@@ -5138,10 +5140,10 @@ function App() {
       const next=result['@odata.nextLink']||'';
       url=next.startsWith('https://graph.microsoft.com/v1.0')?next.slice('https://graph.microsoft.com/v1.0'.length):'';
     }while(url);
-    return items.filter(it=>it.folder).map(it=>Object.assign({
+    return items.filter(it=>it.folder&&(key!=='offen'||!['000_Tagesbesichtigung','00_Besichtigt','00_abgelegt','000_AppSystem'].includes(it.name))).map(it=>Object.assign({
       cloudItemId:it.id,cloudName:it.name,cloudParentStatus:key,
       ablageKategorie:key==='abgelegt'?category:'',geaendert:it.lastModifiedDateTime,
-      status:key==='abgelegt'?'abgeschlossen':key==='besichtigt'?'Bearbeitung':'Besichtigung'
+      status:key==='abgelegt'?'abgeschlossen':key==='besichtigt'?'Bearbeitung':key==='offen'?'offen':'Besichtigung'
     },parseCloudAktName(it.name))).sort((a,b)=>(a.schadennummer||'').localeCompare(b.schadennummer||'', 'de-AT',{numeric:true}));
   };
   const childByName=async(parentId,name)=>{
