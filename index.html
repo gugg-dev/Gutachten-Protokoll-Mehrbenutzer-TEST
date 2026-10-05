@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Studio F Gutachten · Mehrbenutzer TEST v0.12.0</title>
+<title>Studio F Gutachten · Mehrbenutzer TEST v0.12.2</title>
 <meta name="theme-color" content="#12171B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -769,7 +769,7 @@ button{font:inherit}
 <script src="shared-storage.js"></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
-const APP_VERSION = '0.12.1-shared-test';
+const APP_VERSION = '0.12.2-shared-test';
 
 /* ============================================================
    1  KONSTANTEN
@@ -830,7 +830,7 @@ const VEREINFACHTE_MASSNAHMEN = [
 
 const MSSTORE = 'gp_shared_test_microsoft_v2';
 const MSTOKEN = 'gp_shared_test_microsoft_token_v1';
-const DEFAULT_MS = { clientId:'86f20e39-d4ae-4a7b-bf71-588de01d2e16', tenant:'fa2f2c93-cb81-46a9-ac8f-2c3e9efd5fd4', root:'Gutachten_Mehrbenutzer_TEST_20261004', storageMode:'shared', driveId:'b!kac40iyIuUq2m1cyr9YBjiQ3PrlENNBFnhADDVWqiVkQBRKI_bZ2Q40FFUr0Gkux', siteId:'studioflorian.sharepoint.com,d238a791-882c-4ab9-b69b-5732afd6018e,b93e3724-3444-45d0-9e10-030d55aa8959', stateListId:'625f1c0f-ddde-460f-b390-fa5bb0d434b1', sharedCalendarId:'', sharedCalendarName:'' };
+const DEFAULT_MS = { clientId:'86f20e39-d4ae-4a7b-bf71-588de01d2e16', tenant:'fa2f2c93-cb81-46a9-ac8f-2c3e9efd5fd4', root:'Gutachten_Mehrbenutzer_TEST_20261004', storageMode:'shared', driveId:'b!kac40iyIuUq2m1cyr9YBjiQ3PrlENNBFnhADDVWqiVkQBRKI_bZ2Q40FFUr0Gkux', siteId:'studioflorian.sharepoint.com,d238a791-882c-4ab9-b69b-5732afd6018e,b93e3724-3444-45d0-9e10-030d55aa8959', stateListId:'625f1c0f-ddde-460f-b390-fa5bb0d434b1', sharedCalendarId:'', sharedCalendarName:'', wordTestFlowEnabled:true };
 const SharedStorage = window.StudioFSharedStorage;
 const GRAPH_SCOPES = ['openid','profile','offline_access','User.Read','Files.ReadWrite']; // OneDrive-Konto und Outlook-Verbindung im Flow bleiben getrennt.
 const AGENTSTORE = 'gp_shared_test_agent_v1';
@@ -3701,7 +3701,7 @@ function GutachtenView({akt,setAkt,go,cloud,toast,presetSourceId='',presetSource
   const [quellen,setQuellen]=useState([]),[quellenBusy,setQuellenBusy]=useState(false),[quelleId,setQuelleId]=useState('');
   const [thema,setThema]=useState(''),[formStatus,setFormStatus]=useState(''),[formRefs,setFormRefs]=useState([]);
   const [pruefpunkte,setPruefpunkte]=useState([]);
-  const wordJobKey='studiof_word_direct_job_'+akt.id;
+  const wordJobKey='studiof_shared_test_word_direct_job_'+akt.id;
   const [wordJob,setWordJob]=useState(()=>{try{return JSON.parse(localStorage.getItem(wordJobKey)||'null');}catch(e){return null;}});
   const [wordStatus,setWordStatus]=useState('');
   const loadedDraftRef=useRef('');
@@ -3735,14 +3735,14 @@ function GutachtenView({akt,setAkt,go,cloud,toast,presetSourceId='',presetSource
       setWordStatus('Ein Word-Direkt-Auftrag ist noch offen ('+wordJob.requestId+'). Bitte zuerst dessen Ergebnis im Flow prüfen.');
       return;
     }
-    setQuellenBusy(true);setWordStatus('Word-Direkt-Auftrag wird in OneDrive angelegt …');
+    setQuellenBusy(true);setWordStatus('Word-Direkt-Auftrag wird in der gemeinsamen Testablage angelegt …');
     try{
       const r=await cloud.createWordDirectJob(akt,{sourceDriveItemId:roh.id});
       const pending={requestId:r.job.requestId,outputFileName:r.job.outputFileName,sourceName:roh.name,completed:false};
       localStorage.setItem(wordJobKey,JSON.stringify(pending));
       setWordJob(pending);
       setWordStatus('Word-Direkt-Auftrag bestätigt: '+(r.file?.name||r.job.requestId)+'. Power Automate erstellt das DOCX und speichert es unmittelbar in 02_Unterlagen SV.');
-      toast('Word-Direkt-Auftrag in OneDrive erstellt');
+      toast('Word-Direkt-Auftrag in der Testablage erstellt');
     }catch(e){setWordStatus('Word-Direkt-Auftrag fehlgeschlagen: '+(e.message||String(e)));toast(e.message||String(e));}
     finally{setQuellenBusy(false);}
   };
@@ -5300,7 +5300,7 @@ function App() {
   // Word-direkt v0.11.20: Übergabe exakt des TEST04-Auftragsschemas (vier Felder).
   // Pfad aus Graph-Metadaten der tatsächlich ausgewählten Quelle, nicht aus Akt-Stammdaten raten.
   const createWordDirectJob=async(a,options={})=>{
-    SharedStorage.assertWorkflowsDisabled();
+    SharedStorage.assertWordTestWorkflow(msCfg);
     await ensureBase();
     const src=await verifyFormulationSource(a,options.sourceDriveItemId);
     const sourceParentPath=String(src.parentReference?.path||'');

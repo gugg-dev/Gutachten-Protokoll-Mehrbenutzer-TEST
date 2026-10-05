@@ -238,5 +238,15 @@
   function assertWorkflowsDisabled() {
     throw new StorageError('TEST_FLOW_DISABLED', 'In dieser Testversion ist das Senden an Power Automate gesperrt. Zuerst separate Testflows einrichten und prüfen.');
   }
-  return { assertTestRoot, validateConfig, graphPath, collectPages, scopes, fingerprint, recordKey, createStore, StorageError, assertWorkflowsDisabled };
+  function assertWordTestWorkflow(cfg) {
+    if (cfg.wordTestFlowEnabled !== true) assertWorkflowsDisabled();
+    validateConfig(cfg);
+    if (cfg.storageMode !== 'shared' || cfg.root !== 'Gutachten_Mehrbenutzer_TEST_20261004' ||
+        cfg.driveId !== 'b!kac40iyIuUq2m1cyr9YBjiQ3PrlENNBFnhADDVWqiVkQBRKI_bZ2Q40FFUr0Gkux' ||
+        cfg.clientId !== '86f20e39-d4ae-4a7b-bf71-588de01d2e16' ||
+        cfg.tenant !== 'fa2f2c93-cb81-46a9-ac8f-2c3e9efd5fd4') {
+      throw new StorageError('TEST_FLOW_BINDING', 'Der Word-Testflow ist ausschließlich mit der geprüften gemeinsamen Testablage verbunden.');
+    }
+  }
+  return { assertTestRoot, validateConfig, graphPath, collectPages, scopes, fingerprint, recordKey, createStore, StorageError, assertWorkflowsDisabled, assertWordTestWorkflow };
 });
