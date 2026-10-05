@@ -4336,11 +4336,12 @@ function Skizze({ v, set }) {
    ============================================================ */
 const SCHRITTE = ['Rahmendaten', 'Objekt & Befund', 'Trocknung', 'Abschluss'];
 
-function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initialStep=0 }) {
+function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initialStep=0, newProtocol=false }) {
   const [schritt, setSchritt] = useState(initialStep);
   const [busy, setBusy] = useState(false);
   const [offeneRaeume,setOffeneRaeume]=useState(()=>new Set());
-  const [syncStatus,setSyncStatus]=useState('lokal');
+  const [syncStatus,setSyncStatus]=useState(newProtocol?'Neues Protokoll – Speicherung ausstehend':'Unverändert – keine neue Speicherung');
+  const firstProtocolEffect=useRef(true);
   const s = (k, v) => setProt(Object.assign({}, prot, { [k]:v }));
   const st = (k, v) => s('trocknung', Object.assign({}, prot.trocknung, { [k]:v }));
 
@@ -4560,6 +4561,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
   const merkePersonen = () => {}; // Personen bleiben bewusst nur im jeweiligen Akt
 
   useEffect(()=>{
+    if(firstProtocolEffect.current){firstProtocolEffect.current=false;if(!newProtocol)return;}
     if(cloud?.storageMode==='shared'){try{cloud.stageWorkDraft(Object.assign({},akt,{protokolle:(akt.protokolle||[]).map(x=>x.id===prot.id?prot:x)}));}catch(e){setSyncStatus(e.message||String(e));return;}}
     if(!cloud?.connected){setSyncStatus('Lokal gesichert – zentrale Speicherung ausstehend');return;}
     setSyncStatus('speichert …');
@@ -5835,7 +5837,7 @@ function App() {
     if (view.mode === 'form' && view.protId === 'neu' && akt) {
       const p = leeresProtokoll();
       setAkt(Object.assign({}, akt, { protokolle:akt.protokolle.concat(p) }));
-      setView({ mode:'form', aktId:akt.id, protId:p.id });
+      setView({ mode:'form', aktId:akt.id, protId:p.id, newProtocol:true });
     }
   }, [view]);
 
@@ -5908,7 +5910,7 @@ function App() {
           {view.mode === 'akt' && akt &&
             <AktView akt={akt} ordner={view.ordner} setAkt={setAkt} go={go} loeschAkt={loeschAkt} toast={toast} cloud={cloud} agent={{cfg:agentCfg}} sourceDriveItemId={view.sourceDriveItemId||''} sourceFileName={view.sourceFileName||''} photoProtId={view.photoProtId||''} photoUnitId={view.photoUnitId||''} photoRoomId={view.photoRoomId||''} photoFromForm={!!view.photoFromForm} photoReturnStep={view.photoReturnStep||0} />}
           {view.mode === 'form' && akt && prot &&
-            <Formular key={prot.id} akt={akt} prot={prot} setProt={setProt} go={go} toast={toast} pool={pool} setPool={setPool} cloud={cloud} initialStep={view.photoReturnStep||0} />}
+            <Formular key={prot.id} akt={akt} prot={prot} setProt={setProt} go={go} toast={toast} pool={pool} setPool={setPool} cloud={cloud} initialStep={view.photoReturnStep||0} newProtocol={!!view.newProtocol} />}
         </main>
       </div>
       </>}
