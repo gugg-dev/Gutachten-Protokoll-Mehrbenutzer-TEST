@@ -4666,6 +4666,10 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
     <div>
       <p className="eyebrow">{akt.aktenzeichen || 'ohne AZ'} · {akt.bezeichnung}</p>
       <h2 className="sec">Ortsaugenschein</h2>
+      <div className={'statusbox '+(syncStatus.startsWith('Konflikt')||syncStatus.startsWith('Sync ausstehend:')?'warn':'')} role={syncStatus.startsWith('Konflikt')||syncStatus.startsWith('Sync ausstehend:')?'alert':'status'} aria-live="polite" style={{marginBottom:12}}>
+        <strong>{syncStatus}</strong>
+        {syncStatus.startsWith('Konflikt')&&<p style={{margin:'6px 0 0'}}>Die zentrale Fassung wurde zwischenzeitlich geändert. Dein lokaler Entwurf bleibt erhalten. Bitte über „Gemeinsamen Stand laden“ beide Fassungen vergleichen.</p>}
+      </div>
       <div className="conn" style={{margin:'8px 0 12px'}}><button type="button" className="btn secondary sm" onClick={()=>go({mode:'akt',aktId:akt.id,ordner:'__fotos',photoProtId:prot.id,photoFromForm:true,photoReturnStep:schritt})}>📷 Foto aufnehmen / Fotodokumentation</button></div>
       <p className="mono" style={{ fontSize:12, color:'var(--muted)' }}>{aktOrdner(akt)}/02_Unterlagen SV/</p>
 
@@ -4939,7 +4943,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
 
       <div className="bar">
         {cloud?.storageMode==='shared'&&<button className="btn ghost" onClick={()=>cloud.reloadSharedWork(akt).catch(e=>toast(e.message))}>Gemeinsamen Stand laden</button>}
-        <span className="note">gespeichert · {dDE(prot.datum)}</span>
+        <span className="note">{syncStatus} · {dDE(prot.datum)}</span>
         <button className="btn ghost" onClick={() => go({ mode:'akt', aktId:akt.id })}>Zum Akt</button>
         <button className="btn ghost" disabled={schritt === 0} onClick={() => setSchritt(schritt - 1)}>Zurück</button>
         {schritt < 3
