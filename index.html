@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Studio F Gutachten · Mehrbenutzer TEST v0.12.2</title>
+<title>Studio F Gutachten · Mehrbenutzer TEST v0.12.4</title>
 <meta name="theme-color" content="#12171B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -766,10 +766,10 @@ button{font:inherit}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin></script>
-<script src="shared-storage.js?v=0.12.2-shared-test"></script>
+<script src="shared-storage.js?v=0.12.4-shared-test"></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
-const APP_VERSION = '0.12.2-shared-test';
+const APP_VERSION = '0.12.4-shared-test';
 
 /* ============================================================
    1  KONSTANTEN
@@ -830,7 +830,7 @@ const VEREINFACHTE_MASSNAHMEN = [
 
 const MSSTORE = 'gp_shared_test_microsoft_v2';
 const MSTOKEN = 'gp_shared_test_microsoft_token_v1';
-const DEFAULT_MS = { clientId:'86f20e39-d4ae-4a7b-bf71-588de01d2e16', tenant:'fa2f2c93-cb81-46a9-ac8f-2c3e9efd5fd4', root:'Gutachten_Mehrbenutzer_TEST_20261004', storageMode:'shared', driveId:'b!kac40iyIuUq2m1cyr9YBjiQ3PrlENNBFnhADDVWqiVkQBRKI_bZ2Q40FFUr0Gkux', siteId:'studioflorian.sharepoint.com,d238a791-882c-4ab9-b69b-5732afd6018e,b93e3724-3444-45d0-9e10-030d55aa8959', stateListId:'625f1c0f-ddde-460f-b390-fa5bb0d434b1', sharedCalendarId:'', sharedCalendarName:'', wordTestFlowEnabled:true };
+const DEFAULT_MS = { clientId:'86f20e39-d4ae-4a7b-bf71-588de01d2e16', tenant:'fa2f2c93-cb81-46a9-ac8f-2c3e9efd5fd4', root:'Gutachten_Mehrbenutzer_TEST_20261004', storageMode:'shared', driveId:'b!kac40iyIuUq2m1cyr9YBjiQ3PrlENNBFnhADDVWqiVkQBRKI_bZ2Q40FFUr0Gkux', siteId:'studioflorian.sharepoint.com,d238a791-882c-4ab9-b69b-5732afd6018e,b93e3724-3444-45d0-9e10-030d55aa8959', stateListId:'625f1c0f-ddde-460f-b390-fa5bb0d434b1', sharedCalendarId:'', sharedCalendarName:'', wordTestFlowEnabled:true, terminTestFlowEnabled:true };
 const SharedStorage = window.StudioFSharedStorage;
 const GRAPH_SCOPES = ['openid','profile','offline_access','User.Read','Files.ReadWrite']; // OneDrive-Konto und Outlook-Verbindung im Flow bleiben getrennt.
 const AGENTSTORE = 'gp_shared_test_agent_v1';
@@ -932,7 +932,7 @@ const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); retur
 
 
 /* STUDIO F – Pilot-Ausformulierung v0.11.19: Stichprobe mit anonymisierten echten Word-Textauszügen. */
-const STUDIOF_REFERENZPROFIL={"schemaVersion":"0.3-word-excerpts-pilot","scope":"Pilot: zehn klassifizierte Word-Referenzen; vier Leitungswasserfälle mit geprüften echten Textauszügen. Kein vollständiger Archivindex.","source":"StudioF_Referenzindex_Pilot_v0.1.json","sourceDocumentPolicy":"Word-Dateien; ältere .doc nur nach Konvertierung von Arbeitskopien","referenceUsage":"Anonymisierte Originaltextauszüge sind NUR Beispiele für Struktur und Formulierung; ihre Falltatsachen niemals in den aktuellen Fall übertragen.","records":[{"referenceId":"LW-001","category":"Leitungswasser","topic":"Haarriss an Anschlussverschraubung Duscharmatur","tags":["Duscharmatur","Verschraubung","technische Trocknung","Sockelbereich"],"sourceRole":"Rohfassung","approvedAsFinalReference":false,"styleCue":"Ursachenbehebung, festgestellte Durchfeuchtung und technische Trocknung werden jeweils getrennt dargestellt. Die Notwendigkeit einer weiteren Trocknung wird nur bei belegtem Mess- und Schadensbild bewertet.","referenceExcerpt":""},{"referenceId":"LW-002","category":"Leitungswasser","topic":"Haarriss an Anschlussverschraubung Duscharmatur","tags":["Duscharmatur","Verschraubung","technische Trocknung","Sockelbereich"],"sourceRole":"gesondert ausformulierte Word-Fassung; Freigabe offen","approvedAsFinalReference":false,"styleCue":"Die in der Schadenmeldung angeführte Ursache wird von der eigenen Befundaufnahme getrennt. Der Wasseraustritt und die Folgeschäden werden erst nach Darstellung des festgestellten ursächlichen Bauteils beurteilt.","referenceExcerpt":"Ursacheneruierung: Aufgrund des vorgefundenen Durchfeuchtungsbildes ist davon auszugehen, dass die Undichtheit bereits über einen längeren Zeitraum bestanden hat. Im Zuge der Befundaufnahme konnten in den Bereichen Spindraum, Umkleide, Gang, Technikraum, Dusche und Büroräumlichkeiten erhöhte Feuchtigkeitswerte festgestellt werden.\n\nUrsacheneruierung: Als Ursache wurde ein Haarriss an der Anschlussverschraubung der Armatur festgestellt, welche sich im Mauerwerk befindet. Der daraus resultierende Wasseraustritt und die festgestellten Durchfeuchtungen sind aus technischer Sicht nachvollziehbar und plausibel.\n\nSchadenbeschreibung: Der Boden wurde im Zuge der technischen Trocknung partiell geöffnet. Als Bodenbeläge sind in den Räumlichkeiten Kautschuk- sowie Vinylbeläge in Bahnenware verlegt. Diese Beläge stellen aus technischer Sicht eine weitgehend dichte Ebene dar, wodurch eine technische Trocknung über einen längeren Zeitraum erforderlich und nachvollziehbar ist.","referenceExcerptSource":"Gutachten_Duscharmatur_Sportheim.docx","excerptReview":"Textauszug aus Word stichprobenartig geprüft; noch keine pauschale fachliche Freigabe als Musterfall."},{"referenceId":"LW-003","category":"Leitungswasser","topic":"Undichtheit einer Hydrantenleitung im Außenbereich","tags":["Hydrantenleitung","Außenbereich","Grabungsarbeiten","Folgeschaden"],"sourceRole":"Gutachtentext; Freigabe offen","approvedAsFinalReference":false,"styleCue":"Fehlende Fotodokumentationen oder bereits sanierte Bauteile werden ausdrücklich als Befundgrenze genannt. Die technische Plausibilisierung erfolgt auf Grundlage konkret benannter Unterlagen und Aussagen.","referenceExcerpt":"Ursacheneruierung: Zum Zeitpunkt der Besichtigung befand sich die Undichtigkeit in saniertem Zustand. Eine Fotodokumentation der Grabungsarbeiten lag dem SV nicht vor.\n\nUrsacheneruierung: Auf Basis der Aussagen vor Ort sowie der vorliegenden Unterlagen ist eine Undichtigkeit an der Hydrantenleitung nachvollziehbar.\n\nSchadenbeschreibung: Eine Raumlufttrocknung im Gang sei aus techn. Sicht nicht nachvollziehbar. Es handelt sich um ein offenes Treppenhaus. Eine Trocknung sei ohne Abschottungsmaßnahmen nicht nachvollziehbar.","referenceExcerptSource":"241005_GA.docx – Hydrantenleitung","excerptReview":"Textauszug aus Word stichprobenartig geprüft; noch keine pauschale fachliche Freigabe als Musterfall."},{"referenceId":"LW-004","category":"Leitungswasser","topic":"Druckführende Kupferleitung im Wellnessbereich","tags":["Kupferleitung","Wellnessbereich","Trocknung","Generalsanierung"],"sourceRole":"Gutachtentext; Freigabe offen","approvedAsFinalReference":false,"styleCue":"Die Lage der Undichtheit, die Zugänglichkeit des Bauteils und bereits laufende Sanierungsmaßnahmen werden knapp unterschieden. Eine technische Trocknung wird nur bei tatsächlichem Erfordernis sachlich bewertet.","referenceExcerpt":"Ursacheneruierung: Die druckführende ursächliche Wasserleitung war zum Zeitpunkt der Besichtigung frei zugänglich. Lt. Angaben des Installateurs war ein Lochfrass an der Kupferleitung gegeben. Die Stelle, an der die Undichtigkeit gegeben war, konnte vom SV aufgrund eines angebrachten Blindstopfens nicht eingesehen werden.\n\nSchadenbeschreibung: Der von der Durchfeuchtung betroffene Wellnessbereich wurde zum Besichtigungszeitpunkt generalsaniert. Es konnten Feuchtehochzüge sowie erhöhte Feuchtigkeitswerte im Bodenbereich festgestellt werden. Zum Besichtigungszeitpunkt war eine techn. Dämmschichttrocknung installiert.","referenceExcerptSource":"241005_GA.docx – Wellnessbereich","excerptReview":"Textauszug aus Word stichprobenartig geprüft; noch keine pauschale fachliche Freigabe als Musterfall."},{"referenceId":"LW-005","category":"Leitungswasser","topic":"Steckverbindung einer Abflussleitung im WC","tags":["Abflussleitung","Steckverbindung","Leckortung","Feuchtigkeitsmessung"],"sourceRole":"Gutachtentext; Freigabe offen","approvedAsFinalReference":false,"styleCue":"Die zeitliche Abfolge aus Schadenmeldung, Vorprüfungen, ergänzender Leckortung, Bauteilöffnung und Ursachenbehebung wird nachvollziehbar wiedergegeben; fremde Berichte werden als solche bezeichnet.","referenceExcerpt":""},{"referenceId":"LW-006","category":"Leitungswasser","topic":"Steckverbindung einer Abflussleitung im WC","tags":["Abflussleitung","Steckverbindung","Leckortung","Feuchtigkeitsmessung"],"sourceRole":"gesondert ausformulierte Word-Fassung; Freigabe offen","approvedAsFinalReference":false,"styleCue":"Eigene Feststellungen und Angaben aus Leckortungsberichten werden strikt getrennt. Ein etwaiger Regress wird nur behandelt, wenn der aktuelle Akt hierfür eine hinreichende Grundlage enthält.","referenceExcerpt":"Ursacheneruierung: Im Zuge der weiteren Eruierung wurde laut den übermittelten Unterlagen zunächst festgestellt, dass an den Wasser- und Heizungsleitungen kein Wasserverlust messbar war. Die Abflussleitungen wurden mit Farbpigmenten beaufschlagt.\n\nUrsacheneruierung: Nach Öffnung des Bodens durch den Installateur wurde die auseinandergezogene Steckverbindung freigelegt. Die Ursache wurde repariert. Im Anschluss wurde eine neuerliche Aufstauprobe durchgeführt, bei welcher kein weiterer Wasserverlust festgestellt wurde.\n\nSchadenbeschreibung: Infolge der Durchfeuchtung waren im Büro und im Gang deutliche Beschädigungen der Trockenbauwände gegeben. An der Unterkonstruktion war im Sockelbereich eine deutliche Korrosion augenscheinlich feststellbar. Ein Austausch der Trockenbauwände im Sockelbereich ist plausibel. Infolge der Durchfeuchtung und der Wiederherstellungsarbeiten der Trockenbauwände ist auch die Malerei zu ergänzen.","referenceExcerptSource":"Gutachten_Top2_Hoehenstrasse88.docx","excerptReview":"Textauszug aus Word stichprobenartig geprüft; noch keine pauschale fachliche Freigabe als Musterfall."},{"referenceId":"HP-001","category":"Haftpflicht","topic":"LKW-Anprall an Wärmedämmverbundfassade","tags":["LKW","Fassade","WDVS","Beschichtung"],"sourceRole":"Gutachtentext; Freigabe offen","approvedAsFinalReference":false,"styleCue":"Bei einem Anprall wird zuerst der gemeldete Hergang eingeordnet, danach das vor Ort festgestellte mechanische Schadenbild mit betroffenen Bauteilen und der schadenkausalen Wiederherstellung dargestellt.","referenceExcerpt":""},{"referenceId":"HP-002","category":"Haftpflicht","topic":"LKW-Anprall an Toranlage","tags":["LKW","Toranlage","Notreparatur","Nutzungsdauer"],"sourceRole":"Gutachtentext; Freigabe offen","approvedAsFinalReference":false,"styleCue":"Notmaßnahmen, provisorischer Zustand und endgültige Instandsetzung werden differenziert beschrieben. Rechnungen und Angebotssummen werden nur bei tatsächlich vorliegenden Unterlagen bewertet.","referenceExcerpt":""},{"referenceId":"AN-001","category":"Anprall","topic":"PKW-Anprall an Außenmauer","tags":["PKW","Außenmauer","Fassadenbeschädigung","Mauerabdeckung"],"sourceRole":"gesondert ausformulierte Word-Fassung; Freigabe offen","approvedAsFinalReference":false,"styleCue":"Die mechanischen Auswirkungen auf einen Außenbauteil werden örtlich präzise beschrieben. Nicht untersuchte Nachbarbauteile werden ausdrücklich abgegrenzt; Sanierungsumfang wird nicht aus Referenzen übernommen.","referenceExcerpt":""},{"referenceId":"VS-001","category":"Verstopfungen","topic":"Wiederkehrende Verstopfung einer Abflussleitung","tags":["Abflussleitung","Kamerabefahrung","Korrosion","Querschnitt"],"sourceRole":"Gutachtentext; Freigabe offen","approvedAsFinalReference":false,"styleCue":"Bei Verstopfungen werden Verlauf, wiederkehrende Ereignisse, Kamerabefahrung, Zustand der Leitung und belegte Reinigungs- bzw. Austauschmaßnahmen sachlich unterschieden.","referenceExcerpt":""}]};
+const STUDIOF_REFERENZPROFIL={"schemaVersion":"shared-test-private-references-v1","scope":"Referenzgutachten werden ausschließlich vom separaten Word-Testflow aus der privaten Ablage geladen.","sourceDocumentPolicy":"Private Referenzdateien; keine eingebetteten Gutachtenauszüge in der öffentlichen Test-App.","referenceUsage":"Ausschließlich sprachliche und strukturelle Orientierung; Tatsachengrundlage bleibt der SV-Rohentwurf.","records":[]};
 
 const STUDIOF_FORMULIERREGELN=[
   'Formuliere fachlichen Rohtext in flüssige, sachliche und technisch korrekte Sätze um. Keine zusätzlichen Tatsachen, Schlussfolgerungen, Sanierungsmaßnahmen oder Schadenursachen erfinden.',
@@ -3063,7 +3063,7 @@ function AssistenzDetails({akt,cloud,onSaved,go,toast,tourTarget,onTourTargetUse
               <div className="ad-change-hint">Auftrag: {d.terminAenderung.requestId}</div>
               {d.terminAenderung.status==='preparing'&&<button type="button" className="ad-btn ad-sm" disabled={busy||lade||!cloud.connected} onClick={()=>submitTerminChange(true)}>Gespeicherten Änderungsauftrag erneut bereitstellen</button>}
             </>:<>
-              {!changeDraft?<button type="button" className="ad-btn ad-sm" disabled={busy||lade||!cloud.connected} onClick={startTerminChange}>✎ Termin ändern</button>:<>
+              {!changeDraft?<button type="button" className="ad-btn ad-sm" disabled={busy||lade||!cloud.connected||cloud.storageMode==='shared'} onClick={startTerminChange}>✎ Termin ändern (im TEST noch gesperrt)</button>:<>
                 <div className="ad-edit-grid">
                   <div className="ad-edit-field"><label>Neues Besichtigungsdatum</label><input type="date" disabled={busy} value={changeDraft.datum} onChange={e=>setChangeDraft(v=>Object.assign({},v,{datum:e.target.value}))}/></div>
                   <div className="ad-edit-field"><label>Neuer Beginn (120 Minuten)</label><input type="text" inputMode="numeric" maxLength={5} placeholder="HH:MM" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" disabled={busy} value={changeDraft.zeit} onChange={e=>setChangeDraft(v=>Object.assign({},v,{zeit:e.target.value}))}/></div>
@@ -3077,7 +3077,8 @@ function AssistenzDetails({akt,cloud,onSaved,go,toast,tourTarget,onTourTargetUse
             {Array.isArray(d.terminAenderungsHistorie)&&d.terminAenderungsHistorie.length>0&&<div className="ad-change-history"><strong>Bestätigte Änderungen</strong>{d.terminAenderungsHistorie.slice(-5).reverse().map((h,i)=><div key={h.requestId||i}>{h.previousDate} {h.previousTime} → {h.newDate} {h.newTime} · {h.confirmedAt||''}{h.reason?' · '+h.reason:''}</div>)}</div>}
           </section>}
         </div>
-        <div className="ad-detail-actions"><button type="button" className="ad-btn ad-yellow" disabled={busy||lade||!cloud.connected||d.terminAuftrag?.status==='sent'||['preparing','queued'].includes(d.terminAenderung?.status)} onClick={speichern}>{d.terminAuftrag?.status==='sent'?'Outlook-Termin bestätigt · für Änderung oben klicken':busy?'Speichert / Terminauftrag wird vorbereitet …':(d.besichtigungDatum&&d.besichtigungZeit?'Termin bestätigen & Einladung vorbereiten':'Auftragsdaten speichern')}</button></div>
+        {cloud.terminTestFlowEnabled&&<div className="ad-calendar-note" role="note">TEST: Einladungen gehen ausschließlich an guggenbichler@studio-f.at. Nur synthetische Testakten verwenden. Terminänderungen sind noch gesperrt.</div>}
+        <div className="ad-detail-actions"><button type="button" className="ad-btn ad-yellow" disabled={busy||lade||!cloud.connected||d.terminAuftrag?.status==='sent'||['preparing','queued'].includes(d.terminAenderung?.status)} onClick={speichern}>{d.terminAuftrag?.status==='sent'?'Outlook-Termin bestätigt · für Änderung oben klicken':busy?'Speichert / Terminauftrag wird vorbereitet …':(d.besichtigungDatum&&d.besichtigungZeit?(cloud.terminTestFlowEnabled?'TEST-Termin bestätigen & Einladung vorbereiten':'Termin bestätigen & Einladung vorbereiten'):'Auftragsdaten speichern')}</button></div>
         {calendarMsg&&<div className="ad-calendar-note" role="status">{calendarMsg}</div>}
       </div>
       <div className="ad-edit"><div className="ad-upload-head"><h3>Unterlagen per Drag & Drop hinzufügen</h3><div className="ad-edit-field"><label>Ablageort in OneDrive</label><select disabled={dateiBusy||!cloud.connected} value={dateiOrdner} onChange={e=>waehleOrdner(e.target.value)}><option value="Aktstamm">Aktstamm (Standard)</option><option value="02_Unterlagen SV">02_Unterlagen SV</option><option value="01_Fotos Besichtigung">01_Fotos Besichtigung</option></select></div></div>
@@ -3875,7 +3876,7 @@ function GutachtenView({akt,setAkt,go,cloud,toast,presetSourceId='',presetSource
         localStorage.removeItem(wordJobKey);setWordJob(null);setWordStatus('Auftragssperre lokal aufgehoben. Vor einem neuen Auftrag sicherstellen, dass der vorige Flow abgeschlossen ist.');
       }}>Vorigen Auftrag nach Flow-Prüfung freigeben</button>}
       {wordJob?.completed&&<div className="codehint" style={{marginTop:10}}>Word-Direkt-Ergebnis: <span className="mono">{wordJob.outputFileName}</span>. Über „Word-Dateien neu prüfen“ lässt sich die Datei in der Quellenliste anzeigen. Bitte den Entwurf fachlich kontrollieren.</div>}
-      <div className="codehint" style={{marginTop:10}}>Der neue Word-Direkt-Flow verwendet den Studio-F-Redaktionsprompt aus Power Automate. Es werden keine KI-Zugangsdaten in der App gespeichert. Der bisherige JSON-Weg nutzt weiterhin den Pilotindex:  {STUDIOF_REFERENZPROFIL.records.length} klassifizierte Word-Referenzen, davon {STUDIOF_REFERENZPROFIL.records.filter(r=>r.referenceExcerpt).length} mit echten anonymisierten Textauszügen aus Leitungswassergutachten. Es werden niemals vollständige Fremdakten oder deren Stammdaten übergeben. Für den eigentlichen KI-Aufruf muss der Power-Automate-Flow eingerichtet sein. Ein API-Schlüssel gehört nicht in diese HTML-Datei.</div>
+      <div className="codehint" style={{marginTop:10}}>Word direkt lädt die Referenzgutachten im separaten Testflow aus der privaten Ablage. In der öffentlichen Test-App sind keine Originalauszüge eingebettet. Der frühere JSON-Formulierungsweg bleibt gesperrt. Fachliche Grundlage ist ausschließlich der ausgewählte SV-Rohentwurf.</div>
       {formRefs.length>0&&<div className="codehint" style={{marginTop:10}}><strong>Für diesen Auftrag ausgewählte Referenzthemen:</strong><br/>{formRefs.map(r=>r.referenceId+' · '+r.topic+(r.referenceExcerptIncluded?' · Word-Auszug':' · Stilhinweis')).join(' | ')}</div>}
       {formStatus&&<div className="codehint" style={{marginTop:10}}>{formStatus}</div>}
       <div className="codehint" style={{marginTop:10}}>Word direkt: verarbeitet die ausgewählte DOCX als alleinige fachliche Quelle; kein manueller JSON-Upload nötig. Bisheriger JSON-Weg: Bei einem automatisch generierten Rohentwurf wird weiterhin der passende Faktenzettel mitgegeben. Eigene fachliche Aussagen werden niemals durch Referenzgutachten ersetzt.</div>
@@ -4186,7 +4187,7 @@ function Einstellungen({ cfg, setCfg, cloud, go, toast, agentCfg, setAgentCfg })
       <div className="grid g2" style={{marginTop:12}}><Txt l="Drive-ID der gemeinsamen Testbibliothek" v={x.driveId||''} set={v=>s('driveId',v)}/><Txt l="SharePoint-Site-ID" v={x.siteId||''} set={v=>s('siteId',v)}/><Txt l="Liste für gemeinsame Arbeitsstände (ID)" v={x.stateListId||''} set={v=>s('stateListId',v)}/></div><div className="codehint" style={{marginTop:12}}>Redirect-URI für die Microsoft-App-Registrierung:\n{msRedirectUri()}</div>
       <div className="conn" style={{marginTop:14}}><button className="btn ghost" onClick={speichern}>Einstellungen speichern</button>{!cloud.connected?<button className="btn sig" onClick={async()=>{if(!speichern())return;try{await microsoftLogin(x);}catch(e){toast(e.message)}}}>Mit Microsoft anmelden</button>:<button className="btn ghost" onClick={cloud.logout}>Microsoft abmelden</button>}</div>
     </Card>
-    <Card titel="Power Automate"><p>Produktive Word- und Terminflows werden von dieser Testversion nicht angesprochen. Word direkt ist an den separaten Mehrbenutzer-Testflow gebunden. Termin- und weitere KI-Aufträge bleiben gesperrt.</p></Card>
+    <Card titel="Power Automate"><p>Produktive Word- und Terminflows werden von dieser Testversion nicht angesprochen. Word direkt und neue Termine verwenden separate Testflows. TEST-Termine laden ausschließlich guggenbichler@studio-f.at ein. Terminänderungen und weitere KI-Aufträge bleiben gesperrt.</p></Card>
     <Card titel="KI-Agent / Automatisierung"><p style={{marginTop:0}}>Hier wird später nur die Webhook-Adresse deiner n8n-Automatisierung hinterlegt. KI-API-Schlüssel bleiben außerhalb dieser App.</p><Txt l="Automatisierungs-Endpunkt-URL" v={ag.webhookUrl||''} set={v=>setAg(Object.assign({},ag,{webhookUrl:v}))} ph="https://.../webhook/gutachten-agent"/><div style={{marginTop:12}}><Txt l="Optionaler Webhook-Schlüssel" v={ag.sharedSecret||''} set={v=>setAg(Object.assign({},ag,{sharedSecret:v}))} ph="optional"/></div><div className="conn" style={{marginTop:14}}><button className="btn ghost" onClick={agspeichern}>Agent-Einstellungen speichern</button></div></Card>
     <Card titel="Berechtigungen"><p style={{marginTop:0}}>Die gemeinsame Testversion verwendet das Microsoft-Profil und Sites.Selected für eine gesondert freigegebene SharePoint-Site. Die Microsoft-App-Registrierung und die Freigabe der Test-Site wurden separat eingerichtet. Es werden keine Outlook-Berechtigungen in der App angefordert.</p></Card>
     <Card titel="Ablagestruktur"><p style={{marginTop:0}}>OneDrive-Hauptpfad:</p><div className="codehint">/{x.root||'Gutachten_Business'}/[offene Akten direkt] · 000_Tagesbesichtigung · 00_Besichtigt · 00_abgelegt/&lt;Schadenkategorie&gt;</div></Card>
@@ -5451,7 +5452,7 @@ function App() {
     });
   };
   const createTerminInvitationJob=async(a)=>{
-    SharedStorage.assertWorkflowsDisabled();
+    SharedStorage.assertTerminTestWorkflow(msCfg);
     if(!a.besichtigungDatum||!a.besichtigungZeit)throw new Error('Datum und Beginn der Besichtigung fehlen.');
     if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(a.besichtigungZeit))throw new Error('Bitte die Uhrzeit im Format HH:MM eingeben, z. B. 09:30.');
     const end=adZeitPlusMinuten(a.besichtigungZeit,120);
@@ -5459,7 +5460,7 @@ function App() {
     const caseItem=await resolveAktItem(a);
     const full=Object.assign({},a,{cloudItemId:caseItem.id});
     const signature=adTerminSignaturInput(full);
-    const dig=await sha256(signature);
+    const dig=await sha256('studiof-termin-test-v1|'+signature);
     const hex=Array.from(new Uint8Array(dig)).map(v=>v.toString(16).padStart(2,'0')).join('');
     const requestId='studiof-'+hex.slice(0,28);
     const queueFolder=cloudRoot()+'/000_AppSystem/Termin_Einladungen';
@@ -5470,7 +5471,7 @@ function App() {
     const fileName='Termin_'+slug(full.schadennummer||full.aktenzeichen||'Akt')+'_'+requestId+'.json';
     const existing=await childByName(queueId,fileName);
     if(existing)return {file:existing,requestId,signature,subject,alreadyQueued:true};
-    const request={
+    const request=SharedStorage.buildTerminTestJob(msCfg,{
       schemaVersion:1,action:'termin_einladung_erstellen',requestId,createdAt:new Date().toISOString(),
       caseDriveItemId:caseItem.id,caseNumber:full.schadennummer||full.aktenzeichen||'',
       vn:full.vn||full.bezeichnung||'',anspruchsteller:full.geschaedigter||'ident mit VN',
@@ -5485,7 +5486,7 @@ function App() {
       phone:full.kontaktTelefon||'',
       recipients:'Einmalig im Power-Automate-Flow (geschäftliche und private E-Mail-Adresse) hinterlegen',
       sender:'Outlook-Verbindung der Outlook-Verbindung in Power Automate'
-    };
+    });
     const result=await graph(`/me/drive/items/${queueId}:/${encodeURIComponent(fileName)}:/content`,{
       method:'PUT',headers:{'Content-Type':'application/json'},
       body:new Blob([JSON.stringify(request,null,2)],{type:'application/json'})
@@ -5612,8 +5613,12 @@ function App() {
       if(result.requestId!==requestId||result.status!=='sent'||!String(result.eventId||'').trim()){
         throw new Error('Die Outlook-Versandbestätigung ist unvollständig oder passt nicht zum Auftrag.');
       }
+      if(msCfg.storageMode==='shared')SharedStorage.validateTerminTestReceipt(msCfg,requestId,result);
       return result;
     }
+    // Restore confirmed delivery from the durable reservation if file creation failed.
+    // This reads only; it never dispatches a second calendar request.
+    if(msCfg.storageMode==='shared')return SharedStorage.readTerminTestRecoveryReceipt(msCfg,requestId,graph);
     return null;
   };
   // Gemeinsamer, idempotenter Abschluss für Detailansicht UND Auftragsübersicht.
@@ -5723,7 +5728,7 @@ function App() {
     return {file:result,job};
   };
   const logoutCloud=()=>{sessionStorage.removeItem(MSTOKEN);setMsToken(null);setMsUser(null);toast('Microsoft abgemeldet');};
-  const cloud={storageMode:msCfg.storageMode,sharedError,sharedReady,pendingDrafts,resumeDraft,previewDraft,resolveDraft,reloadSharedWork,connected:!!msToken?.access_token&&(msCfg.storageMode!=='shared'||sharedReady),user:msUser,ensureAkt,list:listCloud,upload:uploadCloud,saveProtocol:saveProtocolCloud,listAktRoot,listChildren,readAktJson,readWorkState,saveWorkState,stageWorkDraft,readDisposition,saveDisposition,createTerminInvitationJob,readTerminInvitationReceipt,reconcileTerminInvitation,newTerminChangeId,createTerminChangeJob,readTerminChangeReceipt,reconcileTerminChange,readGutachtenDraft,readFormulationStatus,readFormulationResult,getFormulationSourceStamp,listFormulationSources,verifyFormulationSource,findLatestSVRohentwurf,createFormulationJob,createWordDirectJob,findWordDirectResult,uploadToParent,moveAkt,archiveAkt,archiveCategories,ensureArchiveStructure,listStatusFolder,scanActive,resolveAktItem,createAnalysisJob,listPhotos,uploadPhoto,logout:logoutCloud};
+  const cloud={storageMode:msCfg.storageMode,terminTestFlowEnabled:msCfg.terminTestFlowEnabled===true,sharedError,sharedReady,pendingDrafts,resumeDraft,previewDraft,resolveDraft,reloadSharedWork,connected:!!msToken?.access_token&&(msCfg.storageMode!=='shared'||sharedReady),user:msUser,ensureAkt,list:listCloud,upload:uploadCloud,saveProtocol:saveProtocolCloud,listAktRoot,listChildren,readAktJson,readWorkState,saveWorkState,stageWorkDraft,readDisposition,saveDisposition,createTerminInvitationJob,readTerminInvitationReceipt,reconcileTerminInvitation,newTerminChangeId,createTerminChangeJob,readTerminChangeReceipt,reconcileTerminChange,readGutachtenDraft,readFormulationStatus,readFormulationResult,getFormulationSourceStamp,listFormulationSources,verifyFormulationSource,findLatestSVRohentwurf,createFormulationJob,createWordDirectJob,findWordDirectResult,uploadToParent,moveAkt,archiveAkt,archiveCategories,ensureArchiveStructure,listStatusFolder,scanActive,resolveAktItem,createAnalysisJob,listPhotos,uploadPhoto,logout:logoutCloud};
 
 
   // OneDrive-Grundstruktur und Ablagekategorien beim Verbinden automatisch anlegen.
@@ -5883,7 +5888,7 @@ function App() {
             <div>
               <Start akten={akten} go={go} neu={() => setSheet(true)} cloud={cloud} syncCloud={syncCloudAkten} />
               <Card titel="Mehrbenutzer-Testversion">
-                <p>Getrennte Microsoft-Konten · gemeinsame Testablage. Word direkt wird über den separaten Testflow geprüft. Termin- und weitere KI-Aufträge bleiben gesperrt.</p>
+                <p>Getrennte Microsoft-Konten · gemeinsame Testablage. Word direkt und neue Termine verwenden separate Testflows. TEST-Einladungen gehen ausschließlich an guggenbichler@studio-f.at. Terminänderungen und weitere KI-Aufträge bleiben gesperrt.</p>
                 {cloud.sharedError&&<p role="alert">{cloud.sharedError}</p>}
                 <p>{cloud.pendingDrafts().length} lokal gesicherte, noch nicht bestätigte Änderungen.</p>
                 <button className="btn ghost sm" onClick={()=>saveBlob(new Blob([JSON.stringify(cloud.pendingDrafts(),null,2)],{type:'application/json'}),'StudioF_ausstehende_Entwuerfe.json')}>Ausstehende Entwürfe sichern</button>

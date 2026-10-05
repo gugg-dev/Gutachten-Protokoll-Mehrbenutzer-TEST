@@ -240,13 +240,79 @@
   }
   function assertWordTestWorkflow(cfg) {
     if (cfg.wordTestFlowEnabled !== true) assertWorkflowsDisabled();
+    assertTestWorkflowBinding(cfg);
+  }
+  function assertTerminTestWorkflow(cfg) {
+    if (cfg.terminTestFlowEnabled !== true) assertWorkflowsDisabled();
+    assertTestWorkflowBinding(cfg);
+    if (cfg.siteId !== 'studioflorian.sharepoint.com,d238a791-882c-4ab9-b69b-5732afd6018e,b93e3724-3444-45d0-9e10-030d55aa8959' ||
+        cfg.stateListId !== '625f1c0f-ddde-460f-b390-fa5bb0d434b1') {
+      throw new StorageError('TEST_FLOW_BINDING', 'Terminaufträge benötigen die geprüfte Testsite und Testliste.');
+    }
+  }
+  function buildTerminTestJob(cfg, request) {
+    assertTerminTestWorkflow(cfg);
+    const invalid = () => { throw new StorageError('TEST_TERMIN_JOB', 'Der Test-Terminauftrag enthält ungültige Angaben.'); };
+    if (!/^studiof-[a-f0-9]{28}$/.test(request?.requestId || '') ||
+        typeof request?.caseDriveItemId !== 'string' || !request.caseDriveItemId.trim()) invalid();
+    for (const [key, max] of [['subject',200],['location',500],['description',5000]]) {
+      if (typeof request[key] !== 'string' || request[key].length > max) invalid();
+    }
+    if (!request.subject.trim()) invalid();
+    const parseLocal = value => {
+      if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/.test(value)) invalid();
+      const ms = Date.parse(value + 'Z');
+      if (!Number.isFinite(ms) || new Date(ms).toISOString().slice(0,19) !== value) invalid();
+      return ms;
+    };
+    const start = parseLocal(request.startLocal), end = parseLocal(request.endLocal);
+    if (end - start !== 120 * 60000 || request.startLocal.slice(0,10) !== request.endLocal.slice(0,10)) invalid();
+    return Object.assign({}, request, {
+      schemaVersion:2, contractVersion:'studiof-termin-test-v1',
+      action:'termin_einladung_erstellen', testMode:true, calendarOnly:false,
+      sourceRoot:cfg.root, timeZone:'W. Europe Standard Time'
+    });
+  }
+  function assertTestWorkflowBinding(cfg) {
     validateConfig(cfg);
     if (cfg.storageMode !== 'shared' || cfg.root !== 'Gutachten_Mehrbenutzer_TEST_20261004' ||
         cfg.driveId !== 'b!kac40iyIuUq2m1cyr9YBjiQ3PrlENNBFnhADDVWqiVkQBRKI_bZ2Q40FFUr0Gkux' ||
         cfg.clientId !== '86f20e39-d4ae-4a7b-bf71-588de01d2e16' ||
         cfg.tenant !== 'fa2f2c93-cb81-46a9-ac8f-2c3e9efd5fd4') {
-      throw new StorageError('TEST_FLOW_BINDING', 'Der Word-Testflow ist ausschließlich mit der geprüften gemeinsamen Testablage verbunden.');
+      throw new StorageError('TEST_FLOW_BINDING', 'Der Testflow ist ausschließlich mit der geprüften gemeinsamen Testablage verbunden.');
     }
   }
-  return { assertTestRoot, validateConfig, graphPath, collectPages, scopes, fingerprint, recordKey, createStore, StorageError, assertWorkflowsDisabled, assertWordTestWorkflow };
+  function validateTerminTestReceipt(cfg, requestId, receipt) {
+    // Receipts are accepted only from the exact isolated storage binding.
+    assertTestWorkflowBinding(cfg);
+    if (!/^studiof-[a-f0-9]{28}$/.test(String(requestId || '')) ||
+        receipt?.requestId !== requestId || receipt?.status !== 'sent' ||
+        typeof receipt?.eventId !== 'string' || !receipt.eventId.trim() ||
+        receipt.testMode !== true || receipt.invitationSent !== true ||
+        receipt.sourceRoot !== cfg.root) {
+      throw new StorageError('TEST_TERMIN_RECEIPT', 'Die Testbestätigung weist keine passende versendete Einladung nach. Kalenderanlage ohne Versand bleibt unbestätigt.');
+    }
+    return receipt;
+  }
+  async function readTerminTestRecoveryReceipt(cfg, requestId, graph) {
+    assertTestWorkflowBinding(cfg);
+    if (!/^studiof-[a-f0-9]{28}$/.test(String(requestId || ''))) return null;
+    const key = 'outlook-test|' + requestId;
+    const path = '/sites/' + encodeURIComponent(cfg.siteId) + '/lists/' + encodeURIComponent(cfg.stateListId) +
+      '/items?$expand=fields&$filter=' + encodeURIComponent("fields/RecordKey eq '" + key + "'");
+    const page = await collectPages(graph, path, cfg);
+    if (!Array.isArray(page?.value)) throw new StorageError('TEST_TERMIN_RECEIPT', 'Die zentrale Outlook-Rückmeldung ist unvollständig.');
+    if (!page.value.length) return null;
+    if (page.value.length !== 1 || page.value[0].fields?.RecordKey !== key ||
+        page.value[0].fields?.DocumentName !== 'OutlookTermin_TEST') {
+      throw new StorageError('TEST_TERMIN_RECEIPT', 'Die zentrale Outlook-Rückmeldung ist nicht eindeutig zugeordnet.');
+    }
+    let receipt;
+    try { receipt = JSON.parse(page.value[0].fields.Payload); }
+    catch (_) { throw new StorageError('TEST_TERMIN_RECEIPT', 'Die zentrale Outlook-Rückmeldung enthält ungültiges JSON.'); }
+    if (receipt?.requestId !== requestId) throw new StorageError('TEST_TERMIN_RECEIPT', 'Die zentrale Outlook-Rückmeldung passt nicht zum Auftrag.');
+    if (receipt.status === 'processing_test' || receipt.status === 'created_test') return null;
+    return validateTerminTestReceipt(cfg, requestId, receipt);
+  }
+  return { assertTestRoot, validateConfig, graphPath, collectPages, scopes, fingerprint, recordKey, createStore, StorageError, assertWorkflowsDisabled, assertWordTestWorkflow, assertTerminTestWorkflow, buildTerminTestJob, validateTerminTestReceipt, readTerminTestRecoveryReceipt };
 });
