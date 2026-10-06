@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Studio F Gutachten · Mehrbenutzer TEST v0.12.4</title>
+<title>Studio F Gutachten · Mehrbenutzer TEST v0.12.5</title>
 <meta name="theme-color" content="#12171B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -766,10 +766,10 @@ button{font:inherit}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin></script>
-<script src="shared-storage.js?v=0.12.4-shared-test"></script>
+<script src="shared-storage.js?v=0.12.5-shared-test"></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
-const APP_VERSION = '0.12.4-shared-test';
+const APP_VERSION = '0.12.5-shared-test';
 
 /* ============================================================
    1  KONSTANTEN
@@ -821,7 +821,7 @@ const SCHADENBILDER_SOCKEL = ['Quellungen','Verformungen','Verfärbungen','Ablö
 
 const VEREINFACHTE_MASSNAHMEN = [
   'Bodenbelag abbrechen','Bodenbelag wiederherstellen','Sockelleisten abbrechen','Sockelleisten wiederherstellen',
-  'Wandoberfläche entfernen','Wandoberfläche wiederherstellen','Malerarbeiten Wand','Malerarbeiten Decke',
+  'Wandoberfläche entfernen','Wandoberfläche wiederherstellen','Wiederherstellung Putz','Malerarbeiten Wand','Malerarbeiten Decke',
   'Fliesen abbrechen','Fliesen wiederherstellen','Untergrund vorbereiten','Estrich öffnen','Estrich wiederherstellen',
   'Trockenbau öffnen','Trockenbau wiederherstellen','Dämmung entfernen','Dämmung wiederherstellen',
   'Verbundabdichtung entfernen','Verbundabdichtung wiederherstellen','Tür aus- und einbauen','Tür erneuern',
@@ -974,15 +974,15 @@ const STUDIOF_GUTACHTEN_OUTPUT_SCHEMA={
   pruefpunkte:['string – Unklarheit oder fehlende Aktenangabe, ohne Spekulation']
 };
 
-const leererRaum = () => ({ id:uid(), bez:'', laenge:'', breite:'', hoehe:'2,50', betroffen:true, bodenBetroffen:'', wandBetroffen:'', belag:'', wandoberflaeche:'', betroffenBoden:'', betroffenBodenbelag:'', betroffenWand:'', deckeBetroffen:false, betroffenDecke:'', sockelBetroffen:false, sockel:'', schadenbilderBoden:[], schadenbilderWand:[], schadenbilderDecke:[], schadenbilderSockel:[], schadenbildFreitextBoden:'', schadenbildFreitextWand:'', schadenbildFreitextDecke:'', schadenbildFreitextSockel:'', schadenfeststellung:'', bemerkung:'', ursachenbehebungAktiv:false, folgeschadenAktiv:true, ursachenbehebungText:'', ursachenbehebungStatus:'', massnahmeAuswahl:'', massnahmeArt:'Folgeschaden', sanierungspositionen:[], abgeschlossen:false, trockenbauRueckbau:'Nicht erforderlich', verbundabdichtung:'Nicht relevant', tuerschaden:'Keine sichtbaren Schäden', tuerschadenFreitext:'', elektropruefung:'Nicht erforderlich' });
-const leereWohnung = () => ({ id:uid(), top:'', bewohner:'', bewohnerFunktion:'', personen:[], etage:'EG', regel72:'', auskunftPersonId:'', auskunftPersonFreitext:'', auskunftFunktion:'', angabeSinngemaess:'', feststellung:'', folgeschadensanierung:'', skizze:null, skizzeTitel:'', raeume:[leererRaum()] });
+const leererRaum = () => ({ id:uid(), bez:'', laenge:'', breite:'', hoehe:'2,50', betroffen:true, bodenBetroffen:'', wandBetroffen:'', belag:'', wandoberflaeche:'', betroffenBoden:'', betroffenBodenbelag:'', betroffenWand:'', deckeBetroffen:false, betroffenDecke:'', sockelBetroffen:false, sockel:'', schadenbilderBoden:[], schadenbilderWand:[], schadenbilderDecke:[], schadenbilderSockel:[], schadenbildFreitextBoden:'', schadenbildFreitextWand:'', schadenbildFreitextDecke:'', schadenbildFreitextSockel:'', schadenfeststellung:'', angabeSinngemaess:'', etage:'', bemerkung:'', ursachenbehebungAktiv:false, folgeschadenAktiv:true, ursachenbehebungText:'', ursachenbehebungStatus:'', massnahmeAuswahl:'', massnahmeArt:'Folgeschaden', sanierungspositionen:[], abgeschlossen:false, trockenbauRueckbau:'Nicht erforderlich', verbundabdichtung:'Nicht relevant', tuerschaden:'Keine sichtbaren Schäden', tuerschadenFreitext:'', elektropruefung:'Nicht erforderlich' });
+const leereWohnung = (etage='') => ({ id:uid(), top:'', bewohner:'', bewohnerFunktion:'', personen:[], etage, regel72:'', auskunftPersonId:'', auskunftPersonFreitext:'', auskunftFunktion:'', angabeSinngemaess:'', feststellung:'', ursacheFeststellung:'', folgeschadensanierung:'', skizze:null, skizzeTitel:'', raeume:[leererRaum()] });
 
 const leeresProtokoll = () => ({
   id:uid(), status:'entwurf', erstellt:new Date().toISOString(),
   datum:heute(), uhrzeit:jetzt(), witterung:'', temperatur:'',
   gutachter:GUTACHTER, gps:null,
   anwesende:[{ id:uid(), name:'', funktion:'', firma:'', kontakt:'' }],
-  objektart:'', baujahr:'', nutzung:'', geschoss:'', allgemeinzustand:'', objektsanierung:'', grundsubstanz:'',
+  objektart:'', baujahr:'', baujahrGeschaetzt:false, nutzung:'', geschoss:'', allgemeinzustand:'', objektsanierung:'', grundsubstanz:'',
   schadensbild:'', hergang:'', auskunftsperson:'', auskuenfte:[{ id:uid(), personId:'', personFreitext:'', angabe:'' }], schadenszeitpunkt:'', ursacheKategorie:'', ursacheUnterkategorie:'', ursache:'', ursachePlausibel:'', regress:'', ursachenbehebung:'', vorschaeden:'',
   wohnungen:[leereWohnung()],
   raeume:[leererRaum()],
@@ -990,6 +990,28 @@ const leeresProtokoll = () => ({
   skizze:null, skizzeTitel:'', skizze2:null, skizzeTitel2:'', skizze2Aktiv:false, fotos:'',
   zusammenfassung:'', empfehlung:'', naechsterSchritt:'',
 });
+
+function raumGeschoss(r,w,p){return r.etage||w.etage||p.geschoss||'EG';}
+function raumTitelMitGeschoss(r){return [r.bez,r.etage?rohEtageLabel(r.etage):''].filter(Boolean).join(' · ');}
+function svUrsachenText(p){
+  if(p.ursacheManuell===true||String(p.ursache||'').trim())return p.ursache||'';
+  const ws=p.wohnungen||[];
+  const selected=p.ursacheEinheitId?ws.filter(w=>w.id===p.ursacheEinheitId):ws;
+  const entries=selected.map((w,i)=>({text:String(w.ursacheFeststellung||'').trim(),title:w.top||('Einheit '+(ws.indexOf(w)+1))})).filter(x=>x.text);
+  return entries.map(x=>entries.length>1?x.title+': '+x.text:x.text).join('\n\n');
+}
+function praxisExportProtokoll(p){
+  const ws=(p.wohnungen||[]).map(w=>({...w,raeume:(w.raeume||[]).map(r=>({...r,etage:raumGeschoss(r,w,p)}))}));
+  return {...p,ursache:svUrsachenText(p),wohnungen:ws,raeume:ws.length?ws.flatMap(w=>w.raeume):(p.raeume||[]).map(r=>({...r,etage:raumGeschoss(r,{},p)}))};
+}
+function einheitAusPerson(w,person){
+  if(!person)return w;
+  const ps=(w.personen?.length?w.personen:(w.bewohner?[{name:w.bewohner,funktion:w.bewohnerFunktion||''}]:[])).slice();
+  const hit=ps.findIndex(x=>x.personId===person.id||String(x.name||'').trim().toLowerCase()===person.name.trim().toLowerCase());
+  const entry={id:hit>=0?ps[hit].id:uid(),personId:person.id,name:person.name,funktion:person.funktion||''};
+  if(hit>=0)ps[hit]={...ps[hit],...entry};else ps.push(entry);
+  return {...w,top:person.top||w.top||'',personen:ps,bewohner:ps[0]?.name||'',bewohnerFunktion:ps[0]?.funktion||'',auskunftPersonId:person.id,auskunftPersonFreitext:person.name,auskunftFunktion:person.funktion||''};
+}
 
 const leererAkt = () => ({
   id:uid(), jahr:String(new Date().getFullYear()),
@@ -1153,6 +1175,7 @@ function BILD(cx, cy, rid) {
 }
 
 function protokollXML(akt, p, hatBild, bildCx, bildCy, hatBild2=false, bildCx2=0, bildCy2=0, unitBilder=[]) {
+  p=praxisExportProtokoll(p);
   const W = 9070;
   const o = [];
   o.push(P('ORTSAUGENSCHEIN — NIEDERSCHRIFT', { caps:true, sz:18, color:'6B7A84', after:20 }));
@@ -1183,7 +1206,7 @@ function protokollXML(akt, p, hatBild, bildCx, bildCy, hatBild2=false, bildCx2=0
   o.push(H2('3  Objekt'));
   o.push(TBL([
     ['Objektart',   p.objektart || '—'],
-    ['Baujahr',     { t:p.baujahr || '—', mono:true }],
+    ['Baujahr',     { t:p.baujahr ? p.baujahr+(p.baujahrGeschaetzt?' (geschätzt)':'') : '—', mono:true }],
     ['Nutzung',     p.nutzung || '—'],
     ['Allgemeinzustand', p.allgemeinzustand || '—'],
     ['Sanierung / Bezug', p.objektsanierung || '—'],
@@ -1227,20 +1250,22 @@ function protokollXML(akt, p, hatBild, bildCx, bildCy, hatBild2=false, bildCx2=0
       if(wp.length) o.push(P('Personen der Einheit: '+wp.filter(x=>x.name).map(x=>x.name+(x.funktion?' ('+x.funktion+')':'')).join('; '),{after:40}));
       if(w.regel72) o.push(P('72-Stunden-Regel: '+w.regel72,{after:40}));
       if(w.angabeSinngemaess) o.push(P('Sinngemäße Angabe' + (w.auskunftPersonFreitext ? ' von '+w.auskunftPersonFreitext+(w.auskunftFunktion?' ('+w.auskunftFunktion+')':'') : '') + ': '+w.angabeSinngemaess,{after:40}));
+      if(w.ursacheFeststellung) o.push(P('Schadenursache · Feststellungen des SV: '+w.ursacheFeststellung,{after:40}));
       if(w.feststellung) o.push(P('Feststellungen des SV: '+w.feststellung,{after:40}));
       if(w.folgeschadensanierung) o.push(P('Übergreifende Folgeschadensanierung: '+w.folgeschadensanierung,{after:40}));
       const ub=unitBilder.find(x=>x.wi===wi); if(ub){ o.push(P('Skizze dieser Einheit',{b:true,sz:20,before:80,after:30})); o.push(BILD(ub.cx,ub.cy,ub.rid)); o.push(P(ub.title||'Handskizze der Einheit, ohne Maßstab.',{i:true,sz:17,color:'6B7A84',after:50})); }
       const rows=[['Raum','Bodenbelag','Boden m²','Wand m²','Decke m²','Sockel lfm']];
       let sF=0,sW=0,sD=0,sS=0;
-      rooms.forEach(r=>{ const v=raumWerte(r); const bf=r.betroffen?(n(r.betroffenBoden)>0?n(r.betroffenBoden):v.flaeche):0; const wf=r.betroffen?(n(r.betroffenWand)>0?n(r.betroffenWand):v.wand):0; const df=(r.betroffen&&r.deckeBetroffen)?(n(r.betroffenDecke)>0?n(r.betroffenDecke):v.flaeche):0; const sl=(r.betroffen&&r.sockelBetroffen)?(n(r.sockel)>0?n(r.sockel):v.umfang):0; sF+=bf;sW+=wf;sD+=df;sS+=sl;gesF+=bf;gesW+=wf; rows.push([r.bez,r.belag||'—',{t:de(bf),align:'right',mono:true},{t:de(wf),align:'right',mono:true},{t:de(df),align:'right',mono:true},{t:de(sl),align:'right',mono:true}]); });
+      rooms.forEach(r=>{ const v=raumWerte(r); const bf=r.betroffen?(n(r.betroffenBoden)>0?n(r.betroffenBoden):v.flaeche):0; const wf=r.betroffen?(n(r.betroffenWand)>0?n(r.betroffenWand):v.wand):0; const df=(r.betroffen&&r.deckeBetroffen)?(n(r.betroffenDecke)>0?n(r.betroffenDecke):v.flaeche):0; const sl=(r.betroffen&&r.sockelBetroffen)?(n(r.sockel)>0?n(r.sockel):v.umfang):0; sF+=bf;sW+=wf;sD+=df;sS+=sl;gesF+=bf;gesW+=wf; rows.push([raumTitelMitGeschoss(r),r.belag||'—',{t:de(bf),align:'right',mono:true},{t:de(wf),align:'right',mono:true},{t:de(df),align:'right',mono:true},{t:de(sl),align:'right',mono:true}]); });
       rows.push([{t:'Summe Wohnung',b:true},'',{t:de(sF),align:'right',mono:true,b:true},{t:de(sW),align:'right',mono:true,b:true},{t:de(sD),align:'right',mono:true,b:true},{t:de(sS),align:'right',mono:true,b:true}]);
       o.push(TBL(rows,[1800,1600,1350,1350,1350,1620],{head:true}));
       rooms.forEach(r=>{
         const fest = r.schadenfeststellung || r.bemerkung || '';
         const sb=protokollSchadenbilder(r);
         const sbFrei=[r.schadenbildFreitextBoden,r.schadenbildFreitextWand,r.schadenbildFreitextDecke,r.schadenbildFreitextSockel].map(rohSatz).filter(Boolean);
-        if(fest || sb.length || sbFrei.length || r.wiederherstellungFreitext || rohSatz(r.ursachenbehebungText) || (r.sanierungspositionen||[]).length){
-          o.push(P(r.bez, { b:true, sz:20, before:90, after:25 }));
+        if(r.angabeSinngemaess || fest || sb.length || sbFrei.length || r.wiederherstellungFreitext || rohSatz(r.ursachenbehebungText) || (r.sanierungspositionen||[]).length){
+          o.push(P(raumTitelMitGeschoss(r), { b:true, sz:20, before:90, after:25 }));
+          if(r.angabeSinngemaess)o.push(P('Sinngemäße Angaben im Raum (Fremdangaben): '+r.angabeSinngemaess));
           if(fest) o.push(P('Feststellung des SV: ' + fest));
           if(sb.length) o.push(P('Schadenbilder: ' + sb.join('; ')));
           [...new Set(sbFrei)].forEach(x=>o.push(P('Ergänzende Feststellung: '+x)));
@@ -1653,6 +1678,7 @@ function rohEindeutig(texte){
 }
 
 function svFaktenText(akt,p){
+  p=praxisExportProtokoll(p);
   const lines=[];
   const val=x=>rohSatz(x);
   const put=(label,value)=>{ const v=val(value); if(v) lines.push(label+': '+v); };
@@ -1674,8 +1700,8 @@ function svFaktenText(akt,p){
   lines.push('');
   lines.push('OBJEKT');
   put('Objektart',p?.objektart);
-  if(jahr>=1800&&jahr<=aktuellesJahr+1){ put('Baujahr',String(jahr)); put('Gebäudealter ca.',String(alter)+' Jahre'); }
-  else put('Baujahr / Alter',p?.baujahr);
+  if(jahr>=1800&&jahr<=aktuellesJahr+1){ put('Baujahr',String(jahr)+(p.baujahrGeschaetzt?' (geschätzt)':'')); put('Gebäudealter ca.',String(alter)+' Jahre'); }
+  else put('Baujahr / Alter',p?.baujahr?String(p.baujahr)+(p.baujahrGeschaetzt?' (geschätzt)':''):'');
   put('Nutzung',p?.nutzung);
   put('Geschoss',p?.geschoss);
   put('Allgemeinzustand',p?.allgemeinzustand);
@@ -1708,6 +1734,7 @@ function svFaktenText(akt,p){
     if(!rooms.length) return;
     lines.push('');
     lines.push('EINHEIT: '+rohWohnungTitel(w,wi));
+    put('Schadenursache · eigene Feststellung zur Einheit',w.ursacheFeststellung);
     put('Feststellung zur Einheit',w.feststellung);
     put('Übergreifende Folgeschadensanierung',w.folgeschadensanierung);
     if(val(w.angabeSinngemaess)){
@@ -1718,6 +1745,8 @@ function svFaktenText(akt,p){
     rooms.forEach(r=>{
       lines.push('');
       lines.push('RAUM: '+val(r.bez));
+      put('Geschoss des Raums',r.etage);
+      put('Sinngemäße Angaben im Raum (Fremdangaben)',r.angabeSinngemaess);
       put('Freie Feststellung des SV',r.schadenfeststellung||r.bemerkung);
 
       const boden=(r.bodenBetroffen==='Ja'||n(r.betroffenBodenbelag)>0||n(r.betroffenBoden)>0);
@@ -1795,6 +1824,7 @@ function svFaktenText(akt,p){
 }
 
 function svRohentwurfXML(akt,p){
+  p=praxisExportProtokoll(p);
   const o=[];
   const jahr=Number(p.baujahr), aktuellesJahr=new Date().getFullYear();
   const alter=(jahr>=1800 && jahr<=aktuellesJahr+1)?(aktuellesJahr-jahr):null;
@@ -1814,8 +1844,8 @@ function svRohentwurfXML(akt,p){
 
   const objekt=[];
   if(rohObjektBeschreibung(p.objektart)) objekt.push(rohObjektBeschreibung(p.objektart));
-  if(jahr>=1800 && jahr<=aktuellesJahr+1) objekt.push(`Das Gebäude wurde im Jahr ${jahr} errichtet und weist ein Alter von ca. ${alter} Jahren auf.`);
-  else if(rohSatz(p.baujahr)) objekt.push(`Das Alter beziehungsweise Baujahr des Gebäudes wurde mit ${rohSatz(p.baujahr)} angegeben.`);
+  if(jahr>=1800 && jahr<=aktuellesJahr+1) objekt.push(p.baujahrGeschaetzt?`Das Baujahr des Gebäudes wird auf ca. ${jahr} geschätzt; daraus ergibt sich ein geschätztes Alter von ca. ${alter} Jahren.`:`Das Gebäude wurde im Jahr ${jahr} errichtet und weist ein Alter von ca. ${alter} Jahren auf.`);
+  else if(rohSatz(p.baujahr)) objekt.push(`Das Alter beziehungsweise Baujahr des Gebäudes wurde mit ${rohSatz(p.baujahr)}${p.baujahrGeschaetzt?' (geschätzt)':''} angegeben.`);
   if(rohSatz(p.allgemeinzustand)){
     const z=rohSatz(p.allgemeinzustand).toLowerCase();
     if(z==='gut')objekt.push('Das Gebäude befindet sich in einem guten Erhaltungszustand.');
@@ -1880,7 +1910,7 @@ function svRohentwurfXML(akt,p){
         if(allgemeinUrsache)o.push(P(allgemein));
         if(rohSatz(p.ursachenbehebung)&&relevante.length===1)o.push(P(rohSatz(p.ursachenbehebung)));
         ursRaum.forEach(({r,text,hinweise,zusatz})=>{
-          o.push(titel(rohSatz(r.bez)+':',20));
+          o.push(titel(raumTitelMitGeschoss(r)+':',20));
           if(rohSatz(r.ursachenbehebungStatus))o.push(P('Ausführungsstand: '+rohSatz(r.ursachenbehebungStatus)+'.'));
           paraTexte([text,...hinweise,...zusatz]);
         });
@@ -1896,14 +1926,15 @@ function svRohentwurfXML(akt,p){
         const decke=auto&&!!r.deckeBetroffen;
         const sockel=auto&&!!r.sockelBetroffen;
         return {r,auto,zusatz,beschreibung,schadenbild,boden,wand,decke,sockel,
-          hatInhalt:!!(beschreibung||schadenbild.length||zusatz.length||boden||wand||decke||sockel)};
+          hatInhalt:!!(rohSatz(r.angabeSinngemaess)||beschreibung||schadenbild.length||zusatz.length||boden||wand||decke||sockel)};
       }).filter(x=>x.hatInhalt);
       if(folRaeume.length||rohSatz(w.folgeschadensanierung)||(allgemein&&!allgemeinUrsache)){
         o.push(titel('Folgeschaden:'));
         if(allgemein&&!allgemeinUrsache&&!allgemeinDeckeDoppelt)o.push(P(allgemein));
         if(rohSatz(w.folgeschadensanierung))o.push(P(rohSatz(w.folgeschadensanierung)));
         folRaeume.forEach(({r,auto,zusatz,beschreibung,schadenbild,boden,wand,decke,sockel})=>{
-          o.push(titel(rohSatz(r.bez)+':',20));
+          o.push(titel(raumTitelMitGeschoss(r)+':',20));
+          if(rohSatz(r.angabeSinngemaess))o.push(P('Sinngemäße Angaben im Raum (Fremdangaben): '+rohSatz(r.angabeSinngemaess)));
           if(beschreibung)o.push(P(beschreibung));
           if(schadenbild.length){
             paraTexte(schadenbild);
@@ -2053,7 +2084,8 @@ async function exportGutachtenDocx(akt,g){
 
 const gutachtenLeer=()=>({kurzfassung:'',objektbeschreibung:'',kurzzusammenfassung:'',ursacheneruierung:'',schadenbeschreibung:'',reparaturbeschreibung:''});
 const textAusBesichtigung=(akt)=>{
-  const p=(akt.protokolle||[]).slice().sort((a,b)=>(b.erstellt||'').localeCompare(a.erstellt||''))[0];
+  const original=(akt.protokolle||[]).slice().sort((a,b)=>(b.erstellt||'').localeCompare(a.erstellt||''))[0];
+  const p=original?praxisExportProtokoll(original):null;
   const g=gutachtenLeer();
   if(!p) return g;
 
@@ -2079,7 +2111,7 @@ const textAusBesichtigung=(akt)=>{
   if(lage||ort){
     obj.push(`Die besichtigte Liegenschaft befindet sich${lage?' in '+lage:''}${ort?', '+ort:''}.`);
   }
-  if(p.baujahr) obj.push(`Das Baujahr wurde mit ${p.baujahr} angegeben.`);
+  if(p.baujahr) obj.push(p.baujahrGeschaetzt?`Das Baujahr wird auf ca. ${p.baujahr} geschätzt.`:`Das Baujahr wurde mit ${p.baujahr} angegeben.`);
   if(p.nutzung) obj.push(`Die Nutzung des Objektes erfolgt als ${p.nutzung}.`);
   if(p.geschoss) obj.push(`Der besichtigte Bereich befindet sich im ${p.geschoss}.`);
   if(p.allgemeinzustand) obj.push(`Der allgemeine Erhaltungs- und Instandhaltungszustand ist als ${p.allgemeinzustand} einzustufen.`);
@@ -2109,6 +2141,7 @@ const textAusBesichtigung=(akt)=>{
       const v=raumWerte(r);
       const f=[];
 
+      if(satz(r.angabeSinngemaess))f.push('Sinngemäße Angaben im Raum (Fremdangaben): '+satz(r.angabeSinngemaess));
       if(satz(r.schadenfeststellung)) f.push(satz(r.schadenfeststellung));
 
       if(!satz(r.schadenfeststellung) && n(r.betroffenBodenbelag)>0){
@@ -2143,7 +2176,7 @@ const textAusBesichtigung=(akt)=>{
       }
       if(satz(r.bemerkung) && satz(r.bemerkung)!==satz(r.schadenfeststellung)) f.push(satz(r.bemerkung));
 
-      raumTexte.push(`${r.bez}: ${f.join(' ')}`);
+      raumTexte.push(`${raumTitelMitGeschoss(r)}: ${f.join(' ')}`);
 
       const mass=[];
       if(satz(r.wiederherstellungFreitext)) mass.push(satz(r.wiederherstellungFreitext));
@@ -2187,7 +2220,7 @@ const textAusBesichtigung=(akt)=>{
       if(satz(r.massnahmen)) mass.push(satz(r.massnahmen));
 
       if(mass.length){
-        reparaturBereich.push(`${whTitel}, ${r.bez}: ${mass.join('; ')}.`);
+        reparaturBereich.push(`${whTitel}, ${raumTitelMitGeschoss(r)}: ${mass.join('; ')}.`);
       }
     });
 
@@ -4353,6 +4386,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
   const messortOptionen = [...new Set(wohnungen.flatMap((w,wi)=>(w.raeume||[]).filter(r=>r.bez&&r.bez.trim()).map(r=>`${w.top||('Wohnung '+(wi+1))} – ${r.bez.trim()}`)))];
   const setWohnungen = ws => setProt(Object.assign({}, prot, { wohnungen:ws, raeume:ws.flatMap(w=>w.raeume||[]) }));
   const setWohnung = (wi, feld, wert) => { const ws=wohnungen.map((w,i)=>i===wi?Object.assign({},w,{[feld]:wert}):w); setWohnungen(ws); };
+  const uebernehmeAnwesendePerson=(wi,id)=>{const person=(prot.anwesende||[]).find(a=>a.id===id);if(person)setWohnungen(wohnungen.map((w,i)=>i===wi?einheitAusPerson(w,person):w));};
   const setWohnungsRaum = (wi, ri, feld, wert) => { const ws=wohnungen.map((w,i)=>{ if(i!==wi)return w; const rs=(w.raeume||[]).map((r,j)=>j===ri?Object.assign({},r,{[feld]:wert}):r); return Object.assign({},w,{raeume:rs}); }); setWohnungen(ws); };
   const setWohnungsRaumMass = (wi,ri,feld,wert) => {
     const ws=wohnungen.map((w,i)=>{
@@ -4541,7 +4575,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
     const arr = auskuenfte.filter((_,j)=>j!==i);
     setAuskuenfte(arr.length ? arr : [{ id:uid(), personId:'', personFreitext:'', angabe:'' }]);
   };
-  const addRaumWohnung = wi => { const ws=wohnungen.map((w,i)=>i===wi?Object.assign({},w,{raeume:(w.raeume||[]).concat(leererRaum())}):w); setWohnungen(ws); };
+  const addRaumWohnung = wi => { const ws=wohnungen.map((w,i)=>i===wi?Object.assign({},w,{raeume:(w.raeume||[]).concat(Object.assign(leererRaum(),{etage:wohnungen[wi].etage||prot.geschoss||'EG'}))}):w); setWohnungen(ws); };
   const delRaumWohnung = (wi,ri) => { const ws=wohnungen.map((w,i)=>i===wi?Object.assign({},w,{raeume:(w.raeume||[]).filter((_,j)=>j!==ri)}):w); setWohnungen(ws); };
   const delWohnung = wi => { const ws=wohnungen.filter((_,i)=>i!==wi); setWohnungen(ws.length?ws:[leereWohnung()]); };
   const wohnungTitel = (w,wi) => { const namen=(w.personen||[]).map(p=>p.name).filter(Boolean); const auskunft=w.auskunftPersonFreitext||''; const nameText=auskunft||namen.join(', ')||w.bewohner||''; return [w.top||('Einheit '+(wi+1)), nameText, w.etage||''].filter(Boolean).join(' · '); };
@@ -4698,6 +4732,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
             </div>
             <div className="grid g2" style={{ marginTop:12 }}>
               <Txt l="Sachverständiger" v={prot.gutachter} set={v => s('gutachter', v)} />
+              <Sel l="Geschoss (Vorgabe für Einheiten und Räume)" v={prot.geschoss||''} set={v=>s('geschoss',v)} opts={ETAGEN} leer="— auswählen —" />
 
             </div>
           </Card>
@@ -4706,7 +4741,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
             extra={<button className="btn sig sm" onClick={() => s('anwesende', prot.anwesende.concat({ id:uid(), name:'', funktion:'', firma:'', kontakt:'' }))}>+ Person</button>}>
             <div className="rows">
               {prot.anwesende.map((a, i) => (
-                <div key={a.id} className="row person">
+                <div key={a.id} className="row person" style={{gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))'}}>
                   <SelectFree l="Name" v={a.name||''} set={v => {
                     const arr=prot.anwesende.slice();
                     arr[i]=Object.assign({},arr[i],{name:v});
@@ -4714,7 +4749,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
                   }} opts={personenNamen} leer="— Person wählen —" freiLabel="Neue Person eingeben" />
                   <Sel l="Funktion" v={a.funktion||''} set={v => liste('anwesende', i, 'funktion', v)} opts={FUNKTIONEN} leer="— Funktion wählen —" />
                   <Txt l="Firma / Vertretung" v={a.firma} set={v => liste('anwesende', i, 'firma', v)} />
-                  <Txt l="Kontakt" v={a.kontakt} set={v => liste('anwesende', i, 'kontakt', v)} />
+                  <Txt l="Kontakt" v={a.kontakt} set={v => liste('anwesende', i, 'kontakt', v)} /><Txt l="TOP / Einheit der Person" v={a.top||''} set={v=>liste('anwesende',i,'top',v)} ph="optional, z. B. Top 12" />
                   <Kill on={() => s('anwesende', prot.anwesende.filter((_, j) => j !== i))} />
                 </div>
               ))}
@@ -4730,7 +4765,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
           <Card titel="Objekt">
             <div className="grid g3">
               <Sel l="Objektart" v={prot.objektart} set={v => s('objektart', v)} opts={OBJEKTARTEN} leer="— auswählen —" />
-              <Sel l="Baujahr" v={prot.baujahr} set={v => s('baujahr', v)} opts={BAUJAHRE} leer="— auswählen —" />
+              <div><Sel l="Baujahr" v={prot.baujahr} set={v => s('baujahr', v)} opts={BAUJAHRE} leer="— auswählen —" /><label style={{display:'flex',gap:8,marginTop:8}}><input type="checkbox" checked={prot.baujahrGeschaetzt===true} onChange={e=>s('baujahrGeschaetzt',e.target.checked)}/>Baujahr geschätzt {prot.baujahrGeschaetzt?'– Ja':'– Nein'}</label></div>
               <SelectFree l="Nutzung" v={prot.nutzung||''} set={v=>s('nutzung',v)} opts={NUTZUNGEN} leer="— auswählen —" freiLabel="Andere Nutzung / Freitext" />
               <Sel l="Allgemeinzustand" v={prot.allgemeinzustand} set={v => s('allgemeinzustand', v)} opts={ERHALTUNGSZUSTAENDE} leer="— auswählen —" />
               <Txt l="Sanierung / Bezug" v={prot.objektsanierung||''} set={v=>s('objektsanierung',v)} ph="z. B. generalsaniert, Bezug 2010" />
@@ -4738,13 +4773,13 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
             </div>
           </Card>
 
-          <Card titel="Einheiten & Räume" extra={<button className="btn sig sm" onClick={()=>setWohnungen(wohnungen.concat(leereWohnung()))}>+ Wohnung / Einheit</button>}>
+          <Card titel="Einheiten & Räume" extra={<button className="btn sig sm" onClick={()=>setWohnungen(wohnungen.concat(leereWohnung(prot.geschoss||'')))}>+ Wohnung / Einheit</button>}>
             {wohnungen.map((wohnung,wi)=><div key={wohnung.id} className="unit-card">
               <div className="unit-head"><div><div className="card-h" style={{color:'#fff',margin:0}}>{wohnungTitel(wohnung,wi)}</div><div className="sub">Personen und Auskunft einmalig hier erfassen · Räume anschließend kompakt bearbeiten</div></div>{wohnungen.length>1&&<button className="btn ghost sm" style={{color:'#fff',borderColor:'#819099'}} onClick={()=>delWohnung(wi)}>Einheit entfernen</button>}</div>
               <div style={{padding:12}}>
                 <div className="grid g3">
-                  <Txt l="TOP / Einheit" v={wohnung.top||''} set={v=>setWohnung(wi,'top',v)} ph="z. B. Top 12" />
-                  <Sel l="Geschoss" v={wohnung.etage||'EG'} set={v=>setWohnung(wi,'etage',v)} opts={ETAGEN} />
+                  <div><Txt l="TOP / Einheit" v={wohnung.top||''} set={v=>setWohnung(wi,'top',v)} ph="z. B. Top 12" /><Fld l="Person und TOP aus Rahmendaten übernehmen"><select value="" onChange={e=>uebernehmeAnwesendePerson(wi,e.target.value)}><option value="">— Person auswählen —</option>{anwesendeAuswahl.map(a=><option key={a.id} value={a.id}>{a.name}{a.top?' · '+a.top:' · ohne TOP-Angabe'}</option>)}</select></Fld></div>
+                  <Sel l="Geschoss" v={wohnung.etage||prot.geschoss||'EG'} set={v=>setWohnung(wi,'etage',v)} opts={ETAGEN} />
                   <Sel l="72-Stunden-Regel" v={wohnung.regel72||''} set={v=>setWohnung(wi,'regel72',v)} opts={['Ja','Nein']} leer="— auswählen —" />
                 </div>
                 <div className="compact-section">
@@ -4759,7 +4794,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
                     <Sel l="Funktion · Auskunftsperson" v={wohnung.auskunftFunktion||personFunktion(wohnung.auskunftPersonFreitext||wohnung.bewohner)||''} set={v=>setEinheitAuskunftFunktion(wi,v)} opts={FUNKTIONEN} leer="— Funktion —" />
                   </div>
                   <div style={{marginTop:8}}><Area l="Sinngemäße Angabe · Einheit" v={wohnung.angabeSinngemaess||''} set={v=>setWohnung(wi,'angabeSinngemaess',v)} ph="Aussage der Auskunftsperson; wird im Gutachten sinngemäß wiedergegeben." /></div>
-                  <div style={{marginTop:8}}><Area l="Feststellungen des SV · Einheit" v={wohnung.feststellung||''} set={v=>setWohnung(wi,'feststellung',v)} /></div>
+                  <div style={{marginTop:8}}><Area l="Schadenursache · Feststellungen des SV · Einheit" v={wohnung.ursacheFeststellung||''} set={v=>setWohnung(wi,'ursacheFeststellung',v)} ph="Eigene Ursachenfeststellung; keine bloße Vermutung oder Sanierungsmaßnahme." /></div><div style={{marginTop:8}}><Area l="Feststellungen des SV · Einheit" v={wohnung.feststellung||''} set={v=>setWohnung(wi,'feststellung',v)} /></div>
                   <div style={{marginTop:8}}><Area l="Übergreifende Folgeschadensanierung" v={wohnung.folgeschadensanierung||''} set={v=>setWohnung(wi,'folgeschadensanierung',v)} ph="z. B. im gesamten Kellerbereich Sockelbereiche öffnen, Dämmmaterial entfernen und Wandaufbau wiederherstellen" /></div>
                   <div style={{marginTop:10}}><button className="btn ghost sm" onClick={()=>setWohnung(wi,'skizzeAktiv',!wohnung.skizzeAktiv)}>{wohnung.skizzeAktiv?'Skizze schließen':'+ Skizze dieser Einheit'}</button></div>
                   {wohnung.skizzeAktiv&&<div style={{marginTop:8}}><Txt l="Bildunterschrift" v={wohnung.skizzeTitel||''} set={v=>setWohnung(wi,'skizzeTitel',v)} /><Skizze key={wohnung.id+'-sk'} v={wohnung.skizze} set={v=>setWohnung(wi,'skizze',v)} /></div>}
@@ -4768,7 +4803,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
                 <div style={{marginTop:12}}>
                   {(wohnung.raeume||[]).map((r,ri)=>{const v=raumWerte(r);const offen=raumOffen(r);return <div key={r.id} className={'room-card '+(offen?'active ':'')+(r.abgeschlossen?'done':'')}>
                     <button type="button" className="room-head" onClick={()=>toggleRaum(r.id)}>
-                      <span className="room-title">{r.bez||('Raum '+(ri+1))}</span>
+                      <span className="room-title">{r.bez||('Raum '+(ri+1))} · {raumGeschoss(r,wohnung,prot)}</span>
                       <span className="room-tags">{r.ursachenbehebungAktiv&&<span className="tag cause">Ursache</span>}{r.folgeschadenAktiv&&<span className="tag follow">Folgeschaden</span>}{r.abgeschlossen&&<span className="tag done">✓ fertig</span>}</span><span>{offen?'▴':'▾'}</span>
                     </button>
                     {offen&&<div className="room-body">
@@ -4783,7 +4818,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
                         <button type="button" className={'btn sm '+(r.ursachenbehebungAktiv?'sig':'')} onClick={()=>setWohnungsRaum(wi,ri,'ursachenbehebungAktiv',!r.ursachenbehebungAktiv)}>{r.ursachenbehebungAktiv?'✓ ':''}Ursachenbehebung</button>
                         <button type="button" className={'btn sm '+(r.folgeschadenAktiv?'sig':'')} onClick={()=>setWohnungsRaum(wi,ri,'folgeschadenAktiv',!r.folgeschadenAktiv)}>{r.folgeschadenAktiv?'✓ ':''}Folgeschaden</button>
                       </div>
-                      <div style={{marginTop:8}}><Area l="Festgestellter Schaden im Raum" v={r.schadenfeststellung||r.bemerkung||''} set={x=>setWohnungsRaum(wi,ri,'schadenfeststellung',x)} /></div>
+                      <div style={{marginTop:8}}><Sel l="Geschoss dieses Raums" v={raumGeschoss(r,wohnung,prot)} set={x=>setWohnungsRaum(wi,ri,'etage',x)} opts={ETAGEN} /></div><div style={{marginTop:8}}><Area l="Sinngemäße Angaben im Raum" v={r.angabeSinngemaess||''} set={x=>setWohnungsRaum(wi,ri,'angabeSinngemaess',x)} ph="Auskunftsperson und deren Aussage; getrennt von eigenen SV-Feststellungen." /></div><div style={{marginTop:8}}><Area l="Festgestellter Schaden im Raum" v={r.schadenfeststellung||r.bemerkung||''} set={x=>setWohnungsRaum(wi,ri,'schadenfeststellung',x)} /></div>
                       {(r.ursachenbehebungAktiv||(r.sanierungspositionen||[]).some(m=>m.art==='Ursachenbehebung'))&&<div style={{marginTop:8}}>
                         <Sel l="Ausführungsstand der Ursachenbehebung" v={r.ursachenbehebungStatus||''} set={x=>setWohnungsRaum(wi,ri,'ursachenbehebungStatus',x)} opts={['Bereits ausgeführt','Noch vorgesehen','Teilweise ausgeführt','In Durchführung']} leer="— Nicht festgelegt / aus Freitext übernehmen —" />
                         <div style={{marginTop:8}}><Area l="Arbeiten zur Ursachenbehebung in diesem Raum" v={r.ursachenbehebungText||''} set={x=>setWohnungsRaum(wi,ri,'ursachenbehebungText',x)} ph="z. B. partielle Bodenöffnung zur Behebung der Undichtheit; Rohrtausch ca. 0,5 m" /></div>
@@ -4903,14 +4938,14 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
         <div>
           <Card titel="Beurteilung und Abschluss">
             <div className="grid g2">
-              <Sel l="Schadenursache · Einheit" v={prot.ursacheWohnungId||''} set={v=>s('ursacheWohnungId',v)} opts={wohnungen.map((w,wi)=>wohnungTitel(w,wi))} leer="— betroffene Einheit wählen —" />
+              <Sel l="Schadenursache · Einheit" v={prot.ursacheWohnungId||''} set={v=>setProt(Object.assign({},prot,{ursacheWohnungId:v,ursacheEinheitId:wohnungen.find((w,wi)=>wohnungTitel(w,wi)===v)?.id||''}))} opts={wohnungen.map((w,wi)=>wohnungTitel(w,wi))} leer="— betroffene Einheit wählen —" />
               <Sel l="Schadenursache · Hauptkategorie" v={prot.ursacheKategorie||''} set={v=>setProt(Object.assign({},prot,{ursacheKategorie:v,ursacheUnterkategorie:''}))} opts={URSACHEN_HAUPTKATEGORIEN} leer="— Hauptkategorie auswählen —" />
             </div>
             <div style={{marginTop:12}}>
               <Sel l="Schadenursache · Unterkategorie" v={prot.ursacheUnterkategorie||''} set={v=>s('ursacheUnterkategorie',v)} opts={URSACHEN_KATEGORIEN[prot.ursacheKategorie]||[]} leer={prot.ursacheKategorie ? '— Unterkategorie auswählen —' : '— zuerst Hauptkategorie wählen —'} />
             </div>
-            <div style={{marginTop:12}}><Area l="Schadenursache · Feststellung des SV" v={prot.ursache} set={v => s('ursache', v)}
-              ph="Kurze fachliche Konkretisierung der Schadenursache. Diese SV-Angabe hat Vorrang vor abweichenden Aktenunterlagen." /></div>
+            <div style={{marginTop:12}}><Area l="Schadenursache · Feststellung des SV" v={svUrsachenText(prot)} set={v => setProt(Object.assign({},prot,{ursache:v,ursacheManuell:true}))}
+              ph="Kurze fachliche Konkretisierung der Schadenursache. Diese SV-Angabe hat Vorrang vor abweichenden Aktenunterlagen." /><p style={{fontSize:12,color:'var(--muted)'}}>Ohne manuelle Abschlussangabe werden die Ursachenfeststellungen der gewählten Einheit übernommen. Bei mehreren Einheiten bleiben deren Texte getrennt bezeichnet.</p><button type="button" className="btn ghost sm" onClick={()=>setProt(Object.assign({},prot,{ursache:'',ursacheManuell:false}))}>Ursachentext wieder automatisch übernehmen</button></div>
             <div className="grid g2" style={{marginTop:12}}>
               <Sel l="Schadenursache nachvollziehbar und plausibel" v={prot.ursachePlausibel||''} set={v=>s('ursachePlausibel',v)} opts={['Ja','Nein']} leer="— auswählen —" />
               <Sel l="Regressmöglichkeit" v={prot.regress||''} set={v=>s('regress',v)} opts={['Ja','Nein']} leer="— auswählen —" />
