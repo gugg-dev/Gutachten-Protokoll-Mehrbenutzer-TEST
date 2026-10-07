@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Studio F Gutachten · Mehrbenutzer TEST v0.12.5</title>
+<title>Studio F Gutachten · Mehrbenutzer TEST v0.12.6</title>
 <meta name="theme-color" content="#12171B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -766,10 +766,10 @@ button{font:inherit}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin></script>
-<script src="shared-storage.js?v=0.12.5-shared-test"></script>
+<script src="shared-storage.js?v=0.12.6-shared-test"></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
-const APP_VERSION = '0.12.5-shared-test';
+const APP_VERSION = '0.12.6-shared-test';
 
 /* ============================================================
    1  KONSTANTEN
@@ -991,7 +991,16 @@ const leeresProtokoll = () => ({
   zusammenfassung:'', empfehlung:'', naechsterSchritt:'',
 });
 
-function raumGeschoss(r,w,p){return r.etage||w.etage||p.geschoss||'EG';}
+function raumGeschoss(r,w,p){return r.etageManuell===false ? (w.etage||p.geschoss||'EG') : (r.etage||w.etage||p.geschoss||'EG');}
+function aktParentStatus(item,root){
+  const path=String(item?.parentReference?.path||'').split('root:')[1]?.replace(/\/$/,'');
+  const base='/'+String(root).replace(/^\/+|\/+$/g,'');
+  if(path===base)return 'offen';
+  if(path===base+'/000_Tagesbesichtigung')return 'tagesbesichtigung';
+  if(path===base+'/00_Besichtigt')return 'besichtigt';
+  if(path?.startsWith(base+'/00_abgelegt/'))return 'abgelegt';
+  throw new Error('Der tatsächliche Aktordner liegt nicht in einem bekannten Arbeitsordner. Kein automatischer Ordnerwechsel.');
+}
 function raumTitelMitGeschoss(r){return [r.bez,r.etage?rohEtageLabel(r.etage):''].filter(Boolean).join(' · ');}
 function svUrsachenText(p){
   if(p.ursacheManuell===true||String(p.ursache||'').trim())return p.ursache||'';
@@ -2796,7 +2805,7 @@ function AssistenzDetails({akt,cloud,onSaved,go,toast,tourTarget,onTourTargetUse
   // bei erneutem Aufklappen des Auftrags weiter. Es gibt keinen zweiten Einladungsversand.
   useEffect(()=>{
     const request=d.terminAuftrag;
-    if(!cloud.connected||request?.status!=='queued'||!request.requestId)return;
+    if(!cloud.connected||!['queued','sent'].includes(request?.status)||!request.requestId||(request.status==='sent'&&statusKey(akt)!=='offen'))return;
     let inactive=false,checking=false;
     const check=async()=>{
       if(inactive||checking)return;
@@ -3401,7 +3410,7 @@ function AssistenzDashboard({akten,go,neu,cloud,syncCloud,onSaved,toast}) {
   const onSavedRef=useRef(onSaved);
   onSavedRef.current=onSaved;
   const pending=akten.filter(a=>statusKey(a)!=='abgelegt'&&(
-    (a.terminAuftrag?.status==='queued'&&a.terminAuftrag?.requestId)||
+    (['queued','sent'].includes(a.terminAuftrag?.status)&&a.terminAuftrag?.requestId&&(a.terminAuftrag.status==='queued'||statusKey(a)==='offen'))||
     (['preparing','queued'].includes(a.terminAenderung?.status)&&a.terminAenderung?.requestId)
   ));
   const pendingKey=pending.map(a=>(a.cloudItemId||a.id)+':'+(a.terminAuftrag?.status==='queued'?a.terminAuftrag.requestId:'')+':'+(['preparing','queued'].includes(a.terminAenderung?.status)?a.terminAenderung.requestId:'')).join('|');
@@ -3414,7 +3423,7 @@ function AssistenzDashboard({akten,go,neu,cloud,syncCloud,onSaved,toast}) {
       try{
         for(const a of pending){
           let complete=null;
-          if(a.terminAuftrag?.status==='queued')complete=await reconcileRef.current(a);
+          if(['queued','sent'].includes(a.terminAuftrag?.status))complete=await reconcileRef.current(a);
           if(complete)onSavedRef.current(complete);
           if(inactive)return;
           const checkAkt=complete||a;
@@ -4373,6 +4382,7 @@ const SCHRITTE = ['Rahmendaten', 'Objekt & Befund', 'Trocknung', 'Abschluss'];
 function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initialStep=0, newProtocol=false }) {
   const [schritt, setSchritt] = useState(initialStep);
   const [busy, setBusy] = useState(false);
+  const [documentStatus,setDocumentStatus]=useState('');
   const [offeneRaeume,setOffeneRaeume]=useState(()=>new Set());
   const [syncStatus,setSyncStatus]=useState(newProtocol?'Neues Protokoll – Speicherung ausstehend':'Unverändert – keine neue Speicherung');
   const firstProtocolEffect=useRef(true);
@@ -4386,8 +4396,8 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
   const messortOptionen = [...new Set(wohnungen.flatMap((w,wi)=>(w.raeume||[]).filter(r=>r.bez&&r.bez.trim()).map(r=>`${w.top||('Wohnung '+(wi+1))} – ${r.bez.trim()}`)))];
   const setWohnungen = ws => setProt(Object.assign({}, prot, { wohnungen:ws, raeume:ws.flatMap(w=>w.raeume||[]) }));
   const setWohnung = (wi, feld, wert) => { const ws=wohnungen.map((w,i)=>i===wi?Object.assign({},w,{[feld]:wert}):w); setWohnungen(ws); };
-  const uebernehmeAnwesendePerson=(wi,id)=>{const person=(prot.anwesende||[]).find(a=>a.id===id);if(person)setWohnungen(wohnungen.map((w,i)=>i===wi?einheitAusPerson(w,person):w));};
-  const setWohnungsRaum = (wi, ri, feld, wert) => { const ws=wohnungen.map((w,i)=>{ if(i!==wi)return w; const rs=(w.raeume||[]).map((r,j)=>j===ri?Object.assign({},r,{[feld]:wert}):r); return Object.assign({},w,{raeume:rs}); }); setWohnungen(ws); };
+  const uebernehmeAnwesendePerson=(wi,id)=>{const person=(prot.anwesende||[]).find(a=>a.id===id);if(person)setWohnungen(wohnungen.map((w,i)=>i===wi?{...einheitAusPerson(w,person),personRahmenFreitext:''}:w));};
+  const setWohnungsRaum = (wi, ri, feld, wert) => { const ws=wohnungen.map((w,i)=>{ if(i!==wi)return w; const rs=(w.raeume||[]).map((r,j)=>j===ri?Object.assign({},r,{[feld]:wert,...(feld==='etage'?{etageManuell:true}:{})}):r); return Object.assign({},w,{raeume:rs}); }); setWohnungen(ws); };
   const setWohnungsRaumMass = (wi,ri,feld,wert) => {
     const ws=wohnungen.map((w,i)=>{
       if(i!==wi)return w;
@@ -4575,7 +4585,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
     const arr = auskuenfte.filter((_,j)=>j!==i);
     setAuskuenfte(arr.length ? arr : [{ id:uid(), personId:'', personFreitext:'', angabe:'' }]);
   };
-  const addRaumWohnung = wi => { const ws=wohnungen.map((w,i)=>i===wi?Object.assign({},w,{raeume:(w.raeume||[]).concat(Object.assign(leererRaum(),{etage:wohnungen[wi].etage||prot.geschoss||'EG'}))}):w); setWohnungen(ws); };
+  const addRaumWohnung = wi => { const ws=wohnungen.map((w,i)=>i===wi?Object.assign({},w,{raeume:(w.raeume||[]).concat(Object.assign(leererRaum(),{etage:'',etageManuell:false}))}):w); setWohnungen(ws); };
   const delRaumWohnung = (wi,ri) => { const ws=wohnungen.map((w,i)=>i===wi?Object.assign({},w,{raeume:(w.raeume||[]).filter((_,j)=>j!==ri)}):w); setWohnungen(ws); };
   const delWohnung = wi => { const ws=wohnungen.filter((_,i)=>i!==wi); setWohnungen(ws.length?ws:[leereWohnung()]); };
   const wohnungTitel = (w,wi) => { const namen=(w.personen||[]).map(p=>p.name).filter(Boolean); const auskunft=w.auskunftPersonFreitext||''; const nameText=auskunft||namen.join(', ')||w.bewohner||''; return [w.top||('Einheit '+(wi+1)), nameText, w.etage||''].filter(Boolean).join(' · '); };
@@ -4650,9 +4660,14 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
   const word = async () => {
     setBusy(true);
     try {
+      setDocumentStatus('Ortsaugenscheinprotokoll wird abgelegt …');
       await wordSpeichern(prot);
+      setDocumentStatus('Ortsaugenscheinprotokoll abgelegt; SV-Rohentwurf wird erstellt …');
+      await rohentwurfSpeichern(prot);
+      setDocumentStatus('Ortsaugenscheinprotokoll, SV-Rohentwurf und Faktenzettel wurden abgelegt.');
     } catch (e) {
       console.error(e);
+      setDocumentStatus('Dokumentablage nicht vollständig: '+(e.message||String(e))+'. Bereits abgelegte Dateien bleiben erhalten.');
       toast('Word-Ablage fehlgeschlagen: ' + (e.message || String(e)));
     } finally {
       setBusy(false);
@@ -4667,19 +4682,21 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
         status:'abgeschlossen',
         geaendert:new Date().toISOString()
       });
-      setProt(finalProt);
+      // Erst die Dokumente ablegen; ein Fehler darf keinen erfolgreichen
+      // Abschluss im gemeinsamen Arbeitsstand oder in der Anzeige behaupten.
+      setDocumentStatus('Ortsaugenscheinprotokoll wird abgelegt …');
+      await wordSpeichern(finalProt);
+      setDocumentStatus('Ortsaugenscheinprotokoll abgelegt; SV-Rohentwurf wird erstellt …');
+      await rohentwurfSpeichern(finalProt);
 
-      // 1) Finalen App-Arbeitsstand sicher in OneDrive ablegen
+      // Der Abschluss wird erst nach beiden Word-Dateien und Faktenzettel
+      // zentral bestätigt. Der Eingabeentwurf bleibt bei Fehlern erhalten.
       if (cloud?.connected && typeof cloud.saveWorkState === 'function') {
         const finalAkt=Object.assign({},akt,{protokolle:(akt.protokolle||[]).map(x=>x.id===finalProt.id?finalProt:x)});
         await cloud.saveWorkState(finalAkt);
       }
-
-      // 2) Ortsaugenschein als Word ablegen – bleibt unverändert bestehen
-      await wordSpeichern(finalProt);
-
-      // 3) Zusätzlich deterministischen SV-Rohentwurf aus den App-Daten ablegen
-      await rohentwurfSpeichern(finalProt);
+      setProt(finalProt);
+      setDocumentStatus('Ortsaugenscheinprotokoll, SV-Rohentwurf und Faktenzettel abgelegt; Aufnahme abgeschlossen.');
 
       // Der bisherige automatische KI-Gutachtenlauf wird bewusst NICHT mehr beim
       // Abschluss gestartet. Nach fachlicher Bearbeitung des Rohentwurfs folgt
@@ -4687,6 +4704,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
       toast('Aufnahme abgeschlossen. Ortsaugenschein und SV-Rohentwurf wurden abgelegt.');
     } catch (e) {
       console.error(e);
+      setDocumentStatus('Aufnahme nicht vollständig abgeschlossen: '+(e.message||String(e))+'. Bereits abgelegte Dateien bleiben erhalten.');
       toast('Aufnahme konnte nicht abgeschlossen werden: ' + (e.message || String(e)));
     } finally {
       setBusy(false);
@@ -4765,7 +4783,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
           <Card titel="Objekt">
             <div className="grid g3">
               <Sel l="Objektart" v={prot.objektart} set={v => s('objektart', v)} opts={OBJEKTARTEN} leer="— auswählen —" />
-              <div><Sel l="Baujahr" v={prot.baujahr} set={v => s('baujahr', v)} opts={BAUJAHRE} leer="— auswählen —" /><label style={{display:'flex',gap:8,marginTop:8}}><input type="checkbox" checked={prot.baujahrGeschaetzt===true} onChange={e=>s('baujahrGeschaetzt',e.target.checked)}/>Baujahr geschätzt {prot.baujahrGeschaetzt?'– Ja':'– Nein'}</label></div>
+              <div><Sel l="Baujahr" v={prot.baujahr} set={v => s('baujahr', v)} opts={BAUJAHRE} leer="— auswählen —" /><label className="check" style={{marginTop:4}}><input type="checkbox" checked={prot.baujahrGeschaetzt===true} onChange={e=>s('baujahrGeschaetzt',e.target.checked)}/>Baujahr geschätzt {prot.baujahrGeschaetzt?'– Ja':'– Nein'}</label></div>
               <SelectFree l="Nutzung" v={prot.nutzung||''} set={v=>s('nutzung',v)} opts={NUTZUNGEN} leer="— auswählen —" freiLabel="Andere Nutzung / Freitext" />
               <Sel l="Allgemeinzustand" v={prot.allgemeinzustand} set={v => s('allgemeinzustand', v)} opts={ERHALTUNGSZUSTAENDE} leer="— auswählen —" />
               <Txt l="Sanierung / Bezug" v={prot.objektsanierung||''} set={v=>s('objektsanierung',v)} ph="z. B. generalsaniert, Bezug 2010" />
@@ -4778,7 +4796,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
               <div className="unit-head"><div><div className="card-h" style={{color:'#fff',margin:0}}>{wohnungTitel(wohnung,wi)}</div><div className="sub">Personen und Auskunft einmalig hier erfassen · Räume anschließend kompakt bearbeiten</div></div>{wohnungen.length>1&&<button className="btn ghost sm" style={{color:'#fff',borderColor:'#819099'}} onClick={()=>delWohnung(wi)}>Einheit entfernen</button>}</div>
               <div style={{padding:12}}>
                 <div className="grid g3">
-                  <div><Txt l="TOP / Einheit" v={wohnung.top||''} set={v=>setWohnung(wi,'top',v)} ph="z. B. Top 12" /><Fld l="Person und TOP aus Rahmendaten übernehmen"><select value="" onChange={e=>uebernehmeAnwesendePerson(wi,e.target.value)}><option value="">— Person auswählen —</option>{anwesendeAuswahl.map(a=><option key={a.id} value={a.id}>{a.name}{a.top?' · '+a.top:' · ohne TOP-Angabe'}</option>)}</select></Fld></div>
+                  <div><Txt l="TOP / Einheit" v={wohnung.top||''} set={v=>setWohnung(wi,'top',v)} ph="z. B. Top 12" /><SelectFree l="Person und TOP aus Rahmendaten" v={wohnung.personRahmenFreitext||wohnung.auskunftPersonFreitext||''} set={v=>{const person=anwesendeAuswahl.find(a=>a.name===v);if(person)uebernehmeAnwesendePerson(wi,person.id);else setWohnungen(wohnungen.map((w,i)=>i===wi?{...w,personRahmenFreitext:v}:w));}} onFreeCommit={v=>setWohnungen(wohnungen.map((w,i)=>i===wi?{...einheitAusPerson(w,{id:'frei-'+w.id,name:v,funktion:'',top:''}),personRahmenFreitext:v}:w))} opts={personenNamen} leer="— Person auswählen —" freiLabel="Person frei eingeben" /></div>
                   <Sel l="Geschoss" v={wohnung.etage||prot.geschoss||'EG'} set={v=>setWohnung(wi,'etage',v)} opts={ETAGEN} />
                   <Sel l="72-Stunden-Regel" v={wohnung.regel72||''} set={v=>setWohnung(wi,'regel72',v)} opts={['Ja','Nein']} leer="— auswählen —" />
                 </div>
@@ -4966,6 +4984,8 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
           </Card>
 
           <Card titel="Ausgabe">
+            {documentStatus&&<p role="status" aria-live="polite">{documentStatus}</p>}
+            <button className="btn ghost sm" disabled={busy} onClick={async()=>{setBusy(true);try{await rohentwurfSpeichern(prot);setDocumentStatus('SV-Rohentwurf und Faktenzettel abgelegt.');}catch(e){setDocumentStatus('SV-Rohentwurf nicht vollständig abgelegt: '+(e.message||String(e)));}finally{setBusy(false);}}}>Nur SV-Rohentwurf erneut ablegen</button>
             <p style={{ marginTop:0, color:'var(--muted)', fontSize:14 }}>
               {cloud?.connected
                 ? 'Beim Abschluss werden das Ortsaugenscheinprotokoll und zusätzlich ein SV-Rohentwurf als Word direkt in 02_Unterlagen SV gespeichert. Der bisherige automatische KI-Gutachtenlauf wird dabei nicht mehr gestartet.'
@@ -4973,7 +4993,7 @@ function Formular({ akt, prot, setProt, go, toast, pool, setPool, cloud, initial
             </p>
             <p className="mono" style={{ fontSize:13 }}>{aktOrdner(akt)}/02_Unterlagen SV/</p>
             <button className="btn sig" disabled={busy} onClick={word}>
-              {busy ? 'Wird erstellt …' : 'Als Word ablegen'}
+              {busy ? 'Wird erstellt …' : 'Protokoll & SV-Rohentwurf ablegen'}
             </button>
           </Card>
         </div>
@@ -5603,6 +5623,8 @@ function App() {
       if(current?.data?.terminAenderung?.requestId!==key)
         throw new Error('Änderungs-ID in Disposition.json stimmt nicht mit der Outlook-Bestätigung überein.');
       const stored=current.data.terminAenderung;
+      if(receipt.eventId!==stored.previousEventId)
+        throw new Error('Die Änderungsbestätigung gehört nicht zum ursprünglichen Outlook-Termin. Keine automatische Übernahme.');
       if(stored.status==='updated')return Object.assign({},a,dispoMergeFields(current.data));
       if(current.data.terminAuftrag?.status!=='sent'||current.data.terminAuftrag.eventId!==stored.previousEventId)
         throw new Error('Der ursprüngliche Outlook-Termin wurde zwischenzeitlich geändert. Keine automatische Überschreibung.');
@@ -5661,7 +5683,7 @@ function App() {
   const reconcileTerminInFlight=useRef(new Map());
   const reconcileTerminInvitation=(a)=>{
     const request=a?.terminAuftrag;
-    if(!request || request.status!=='queued' || !request.requestId)return Promise.resolve(null);
+    if(!request || !['queued','sent'].includes(request.status) || !request.requestId)return Promise.resolve(null);
     const key=request.requestId;
     if(reconcileTerminInFlight.current.has(key))return reconcileTerminInFlight.current.get(key);
     const task=(async()=>{
@@ -5672,13 +5694,15 @@ function App() {
         throw new Error('Die requestId der Disposition stimmt nicht mit der Outlook-Bestätigung überein. Der Akt wurde nicht verschoben.');
       }
       const savedRequest=current.data.terminAuftrag;
-      if(savedRequest.status==='sent')return Object.assign({},a,dispoMergeFields(current.data));
-      const moved=statusKey(a)==='offen' ? await moveAkt(a,'tagesbesichtigung') : {
-        cloudItemId:a.cloudItemId,cloudParentStatus:statusKey(a)
+      const physical=await resolveAktItem(a);
+      const physicalStatus=aktParentStatus(physical,cloudRoot());
+      if(savedRequest.status==='sent'&&physicalStatus!=='offen')return Object.assign({},a,dispoMergeFields(current.data),{cloudItemId:physical.id,cloudParentStatus:physicalStatus});
+      const moved=physicalStatus==='offen' ? await moveAkt({...a,cloudItemId:physical.id},'tagesbesichtigung') : {
+        cloudItemId:physical.id,cloudParentStatus:physicalStatus
       };
       const meta=Object.assign({},savedRequest,{
         status:'sent',eventId:receipt.eventId,sentAt:receipt.sentAt||new Date().toISOString(),
-        movedAt:statusKey(a)==='offen'?new Date().toISOString():(savedRequest.movedAt||'')
+        movedAt:physicalStatus==='offen'?new Date().toISOString():(savedRequest.movedAt||'')
       });
       const complete=Object.assign({},a,current.data,moved,{
         status:moved.cloudParentStatus==='tagesbesichtigung'?'Besichtigung':a.status,
@@ -5839,7 +5863,7 @@ function App() {
           const r=await cloud.readDisposition(f);
           detail=dispoMergeFields(r?.data||{});
           if(detail.appAusgeblendet===true){hiddenIds.add(f.cloudItemId);continue;}
-          if(detail.terminAuftrag?.status==='queued'){
+          if(detail.terminAuftrag?.status==='queued'||(detail.terminAuftrag?.status==='sent'&&statusKey(base)==='offen')){
             const complete=await cloud.reconcileTerminInvitation(Object.assign({},base,detail));
             if(complete){base=complete;detail=dispoMergeFields(complete);}
           }
