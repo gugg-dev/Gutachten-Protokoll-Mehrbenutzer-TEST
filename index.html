@@ -4120,7 +4120,7 @@ function MobilePhotoCapture({akt,protId,cloud,onExit,syncLabel}){
 }
 
 function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='',fromForm=false,returnStep=0,fromDocuments=false}){
-  const cameraRef=useRef(null),albumRef=useRef(null);
+  const cameraRef=useRef(null),albumRef=useRef(null),qrRef=useRef(null);
   const [unitKey,setUnitKey]=useState(presetUnitId?(presetProtId+'|'+presetUnitId):'__general');
   const [roomKey,setRoomKey]=useState(presetRoomId||'__general');
   const [manualTop,setManualTop]=useState(''),[manualRoom,setManualRoom]=useState('');
@@ -4153,6 +4153,12 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
   const segments=topSegment&&(unitKey==='__general'||roomSegment)?[topSegment,...(roomSegment?[roomSegment]:[])]:[];
   const targetValid=segments.length>0;
   const photoPath='01_Fotos Besichtigung'+(segments.length?'/'+segments.join('/'):'');
+  const iphonePhotoUrl=presetProtId?(location.origin+location.pathname+'?'+new URLSearchParams({photoAct:akt.cloudItemId||akt.id,photoProt:presetProtId}).toString()):'';
+  useEffect(()=>{
+    if(!qrRef.current)return;
+    qrRef.current.replaceChildren();
+    if(iphonePhotoUrl&&window.QRCode)new window.QRCode(qrRef.current,{text:iphonePhotoUrl,width:180,height:180,correctLevel:window.QRCode.CorrectLevel.M});
+  },[iphonePhotoUrl]);
   const previews=useMemo(()=>pending.map(x=>({id:x.id,file:x.file,
     url:x.file.type?.startsWith('image/')&&!/heic|heif/i.test(x.file.type||'')?URL.createObjectURL(x.file):''})),[pending]);
   useEffect(()=>()=>previews.forEach(x=>{if(x.url)URL.revokeObjectURL(x.url);}),[previews]);
@@ -4240,6 +4246,11 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       <div className="photo-location"><strong>Zielordner in OneDrive</strong><br/>{targetValid?photoPath:'Bitte Top und Raum vollständig auswählen.'}</div>
       <div style={{marginTop:8}}><Txt l="Optionaler kurzer Bildhinweis (im Dateinamen)" v={bildhinweis} set={setBildhinweis} ph="z. B. Feuchtehochzug oder Rohrbruch"/></div>
     </Card>
+    {presetProtId&&<Card titel="iPhone für diesen Ortsaugenschein verbinden">
+      <p className="folder-home-note">Einmal pro Ortsaugenschein scannen. Am iPhone erscheinen ausschließlich Aktbezeichnung, TOP, Raum, Fotobeschreibung und Kamera.</p>
+      <div ref={qrRef} style={{display:'inline-block',padding:12,background:'white',minHeight:204,minWidth:204}}/>
+      <div><button className="btn secondary sm" onClick={()=>navigator.clipboard?.writeText(iphonePhotoUrl)}>iPhone-Link kopieren</button></div>
+    </Card>}
     <Card titel="Fotos aufnehmen / hinzufügen">
       {!cloud.connected&&<div className="statusbox warn">OneDrive ist nicht verbunden. Bitte zuerst in den Einstellungen anmelden.</div>}
       <div className="photo-controls">
@@ -6034,10 +6045,10 @@ function App() {
 
   return (
     <div>
-      {mobilePhotoLink&&(()=>{const a=akten.find(x=>x.cloudItemId===mobilePhotoLink.act||x.id===mobilePhotoLink.act);return a
+      {mobilePhotoLink&&view.mode!=='settings'&&(()=>{const a=akten.find(x=>x.cloudItemId===mobilePhotoLink.act||x.id===mobilePhotoLink.act);return a
         ?<MobilePhotoCapture akt={a} protId={mobilePhotoLink.prot} cloud={cloud} syncLabel={mobileSyncStatus} onExit={()=>setView({mode:'settings'})}/>
         :<main style={{padding:24}}><h2>iPhone-Fotoaufnahme</h2><p>{mobileSyncStatus||'Akt wird aus OneDrive geladen …'}</p>{!cloud.connected&&<button className="btn sig" onClick={()=>setView({mode:'settings'})}>Microsoft anmelden</button>}</main>;})()}
-      {!mobilePhotoLink&&view.mode !== 'assistenz' && <>
+      {(!mobilePhotoLink||view.mode==='settings')&&view.mode !== 'assistenz' && <>
       <header className="top">
         <button className="btn sig sm tabsw" onClick={() => setRailAuf(!railAuf)}>Ablage</button>
         <h1>Studio F · Gutachten</h1>
