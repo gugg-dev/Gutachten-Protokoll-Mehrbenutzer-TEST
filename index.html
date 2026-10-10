@@ -4071,6 +4071,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       return photoSegment(n,'Raum_'+(i+1))+(prior?'_'+(prior+1):'');
     })()
   }));
+  useEffect(()=>{if(mobileOnly&&roomKey==='__general'&&roomOptions.length)setRoomKey(roomOptions[0].key);},[mobileOnly,unitKey,roomOptions.length]);
   const chosenRoom=roomOptions.find(r=>r.key===roomKey)||null;
   const topSegment=unitKey==='__general'?'00_Allgemein':unitKey==='__manual'
     ?(manualTop.trim()?'Top_'+photoSegment(manualTop.replace(/^top[\s_-]*/i,''),'Einheit'):'')
@@ -4187,21 +4188,21 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
           {!mobileOnly&&<option value="__manual">+ Top / Einheit frei eingeben</option>}
         </select></Fld>
         {unitKey!=='__general'&&<Fld l="Raum"><select value={roomKey} disabled={busy} onChange={e=>{setRoomKey(e.target.value);setError('');}}>
-          <option value="__general">Allgemein · gesamte Einheit</option>
+          {!mobileOnly&&<option value="__general">Allgemein · gesamte Einheit</option>}
           {roomOptions.map(r=><option key={r.key} value={r.key}>{r.name}</option>)}
           {!mobileOnly&&<option value="__manual">+ Raum frei eingeben</option>}
         </select></Fld>}
       </div>
       {unitKey==='__manual'&&<div style={{marginTop:9}}><Txt l="Bezeichnung der Einheit / Top" v={manualTop} set={setManualTop} ph="z. B. Top 33"/></div>}
       {unitKey!=='__general'&&roomKey==='__manual'&&<div style={{marginTop:9}}><Txt l="Raumbezeichnung" v={manualRoom} set={setManualRoom} ph="z. B. Badezimmer"/></div>}
-      <div className="photo-location"><strong>Zielordner in OneDrive</strong><br/>{targetValid?photoPath:'Bitte Top und Raum vollständig auswählen.'}</div>}
+      {!mobileOnly&&<div className="photo-location"><strong>Zielordner in OneDrive</strong><br/>{targetValid?photoPath:'Bitte Top und Raum vollständig auswählen.'}</div>}
       <div style={{marginTop:8}}><Txt l="Fotobeschreibung" v={bildhinweis} set={setBildhinweis} ph="z. B. Feuchtehochzug oder Rohrbruch"/></div>
     </Card>
     {!mobileOnly&&<Card titel="Mit dem iPhone fotografieren">
       <p className="folder-home-note">QR-Code nur einmal je Ortsaugenscheinprotokoll scannen. Auf dem iPhone direkt TOP/Wohnung und Raum auswählen und anschließend fotografieren. Microsoft-Anmeldung am iPhone ist erforderlich.</p>
       {iphoneUrl?<><div ref={qrRef} style={{background:'#fff',padding:12,display:'inline-block',minHeight:200,minWidth:200}} aria-label="QR-Code zur Fotoerfassung"></div><div style={{marginTop:10,overflowWrap:'anywhere'}}><button type="button" className="btn secondary sm" onClick={()=>navigator.clipboard?.writeText(iphoneUrl).then(()=>setProgress('iPhone-Link kopiert.')).catch(()=>setError('Link konnte nicht kopiert werden.'))}>iPhone-Link kopieren</button></div></>:<p className="folder-home-note">Den QR-Code bitte aus einem geöffneten Ortsaugenscheinprotokoll aufrufen.</p>}
     </Card>}
-    <Card titel={mobileOnly?"Foto aufnehmen":"Fotos aufnehmen / hinzufügen"}>
+    <Card titel={mobileOnly?"Kamera":"Fotos aufnehmen / hinzufügen"}>
       {!cloud.connected&&<div className="statusbox warn">OneDrive ist nicht verbunden. Bitte zuerst in den Einstellungen anmelden.</div>}
       <div className="photo-controls">
         <button type="button" className="btn sig" disabled={busy||!cloud.connected||!targetValid} onClick={()=>cameraRef.current?.click()}>📷 Kamera öffnen</button>
@@ -4209,7 +4210,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       </div>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={addFiles}/>
       <input ref={albumRef} type="file" accept="image/*,.heic,.heif" multiple style={{display:'none'}} onChange={addFiles}/>
-      <p className="folder-home-note">Auf iPhone/iPad öffnet „Kamera öffnen“ je nach Browser direkt die rückseitige Kamera. Am PC erscheint die Dateiauswahl. HEIC und andere Originalformate bleiben unverändert; maximal 50 MB pro Bild.</p>
+      {!mobileOnly&&<p className="folder-home-note">Auf iPhone/iPad öffnet „Kamera öffnen“ je nach Browser direkt die rückseitige Kamera. Am PC erscheint die Dateiauswahl. HEIC und andere Originalformate bleiben unverändert; maximal 50 MB pro Bild.</p>}
       {pending.length>0&&<>
         <div className="photo-pending">{previews.map(x=><div key={x.id} className="photo-pending-item">
           {x.url?<img src={x.url} alt="Noch nicht gespeicherte Fotoauswahl"/>:<div style={{height:112,display:'flex',alignItems:'center',justifyContent:'center'}}>🖼️</div>}
@@ -4217,7 +4218,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
            <label style={{display:'block',fontSize:12,marginTop:7}}>Beschreibung Foto<input type="text" value={pending.find(p=>p.id===x.id)?.description||''} disabled={busy} placeholder="z. B. Quellungen am Türblatt" onChange={e=>setPending(prev=>prev.map(p=>p.id===x.id?{...p,description:e.target.value}:p))}/></label>
           <button className="btn ghost sm" style={{marginTop:7}} disabled={busy} onClick={()=>setPending(prev=>prev.filter(p=>p.id!==x.id))}>Entfernen</button>
         </div>)}</div>
-        <button type="button" className="btn sig" disabled={busy||!targetValid||!cloud.connected} onClick={upload}>{busy?'Übertrage Fotos …':`${pending.length} Foto${pending.length===1?'':'s'} im ausgewählten Ordner speichern`}</button>
+        <button type="button" className="btn sig" disabled={busy||!targetValid||!cloud.connected} onClick={upload}>{busy?'Übertrage Fotos …':`${pending.length} Foto${pending.length===1?'':'s'} speichern`}</button>
       </>}
       {progress&&<div className="photo-progress" role="status">{progress}</div>}
       {error&&<div className="statusbox warn" style={{whiteSpace:'pre-wrap'}}>{error}</div>}
@@ -4228,7 +4229,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       {listing&&<p className="folder-home-note">Fotoordner wird geladen …</p>}
       {!listing&&items.length===0&&<p className="folder-home-note">Hier wurden noch keine Fotos abgelegt.</p>}
       {items.map(it=><div key={it.id} className="photo-fileline"><span>🖼️</span><span style={{flex:1,minWidth:0,overflowWrap:'anywhere'}}>{it.name}<br/><span className="mono" style={{color:'var(--muted)',fontSize:11}}>{fmtBytes(it.size||0)}</span></span>{it.webUrl&&<a href={it.webUrl} target="_blank" rel="noopener noreferrer">In OneDrive öffnen ↗</a>}</div>)}
-    </Card>
+    </Card>}
   </div>;
 }
 
