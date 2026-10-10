@@ -3640,7 +3640,7 @@ function AktView({ akt, ordner, setAkt, go, loeschAkt, toast, cloud, agent, sour
 
   if (ordner === '__unterlagen') return <AktExplorer akt={akt} go={go} cloud={cloud} toast={toast} />;
 
-  if (ordner === '__fotos' || ordner === '01_Fotos Besichtigung') return <div className="statusbox" style={{marginBottom:12}}><strong>Akt: {akt.schadennummer||akt.aktenzeichen||'Ohne Nummer'}</strong><div>{akt.bezeichnung||akt.vn||akt.ort||''}</div><small>{photoSyncStatus||'Synchronisiere Ortsaugenscheinprotokoll …'}</small></div><Fotoablage key={view.photoProtId||akt.id} akt={akt} cloud={cloud} go={go} presetProtId={photoProtId} presetUnitId={photoUnitId} presetRoomId={photoRoomId} fromForm={photoFromForm} returnStep={photoReturnStep} fromDocuments={ordner==='01_Fotos Besichtigung'} />;
+  if (ordner === '__fotos' || ordner === '01_Fotos Besichtigung') return <Fotoablage akt={akt} cloud={cloud} go={go} presetProtId={photoProtId} presetUnitId={photoUnitId} presetRoomId={photoRoomId} fromForm={photoFromForm} returnStep={photoReturnStep} fromDocuments={ordner==='01_Fotos Besichtigung'} />;
 
   if (ordner && ordner !== '03_Ortsaugenschein') {
     const o = ORDNER.find(x=>x.key===ordner);
@@ -4046,7 +4046,7 @@ const photoExtension=f=>{
   const byType={'image/jpeg':'jpg','image/png':'png','image/heic':'heic','image/heif':'heif','image/webp':'webp','image/gif':'gif','image/tiff':'tiff','image/bmp':'bmp','image/avif':'avif'};
   return byType[String(f.type||'').toLowerCase()]||'';
 };
-function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='',fromForm=false,returnStep=0,fromDocuments=false,mobileOnly=false}){
+function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='',fromForm=false,returnStep=0,fromDocuments=false}){
   const cameraRef=useRef(null),albumRef=useRef(null),qrRef=useRef(null);
   const [unitKey,setUnitKey]=useState(presetUnitId?(presetProtId+'|'+presetUnitId):'__general');
   const [roomKey,setRoomKey]=useState(presetRoomId||'__general');
@@ -4061,7 +4061,6 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
     return units.map((w,wi)=>({key:p.id+'|'+w.id,top:w.top||('Einheit '+(wi+1)),
       etage:w.etage||'',date:p.datum||'',rooms:w.raeume||[]}));
   });
-  useEffect(()=>{if(mobileOnly&&unitKey==='__general'&&allUnits.length)setUnitKey(allUnits[0].key);},[mobileOnly,allUnits.length]);
   const selectedUnit=allUnits.find(u=>u.key===unitKey)||null;
   const roomOptions=(selectedUnit?.rooms||[]).map((r,i)=>({
     key:r.id||('raum-'+i), name:String(r.bez||('Raum '+(i+1))).trim(),
@@ -4071,7 +4070,6 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       return photoSegment(n,'Raum_'+(i+1))+(prior?'_'+(prior+1):'');
     })()
   }));
-  useEffect(()=>{if(mobileOnly&&roomKey==='__general'&&roomOptions.length)setRoomKey(roomOptions[0].key);},[mobileOnly,unitKey,roomOptions.length]);
   const chosenRoom=roomOptions.find(r=>r.key===roomKey)||null;
   const topSegment=unitKey==='__general'?'00_Allgemein':unitKey==='__manual'
     ?(manualTop.trim()?'Top_'+photoSegment(manualTop.replace(/^top[\s_-]*/i,''),'Einheit'):'')
@@ -4169,15 +4167,6 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
     setBusy(false);
     if(saved.length)await refresh();
   };
-  // Am iPhone erfolgt der Upload unmittelbar nach der Aufnahme; Fehler bleiben sichtbar und erneut speicherbar.
-  const lastAutoBatch=useRef('');
-  useEffect(()=>{
-    if(!mobileOnly||busy||!pending.length||!cloud.connected||!targetValid)return;
-    const batch=pending.map(p=>p.id).join('|');
-    if(lastAutoBatch.current===batch)return;
-    lastAutoBatch.current=batch;
-    upload();
-  },[mobileOnly,pending,cloud.connected,targetValid,busy]);
   const back=()=>{
     if(busy)return;
     if(pending.length&&!confirm('Es sind noch nicht gespeicherte Fotos ausgewählt. Fotoseite trotzdem verlassen?'))return;
@@ -4185,33 +4174,33 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
     else go({mode:'akt',aktId:akt.id,...(fromDocuments?{ordner:'__unterlagen'}:{})});
   };
   return <div>
-{!mobileOnly&&<button className="btn ghost sm" disabled={busy} onClick={back}>← {fromForm?'Zur Besichtigung':fromDocuments?'Zu Unterlagen':'Zum Akt'}</button>}
-{!mobileOnly&&<p className="eyebrow" style={{marginTop:18}}>{akt.schadennummer||akt.aktenzeichen||'Akt'} · {akt.bezeichnung||akt.vn||''}</p>}
-    <h2 className="sec">📷 {mobileOnly?"Fotoaufnahme":"Fotodokumentation"}</h2>{mobileOnly&&<p className="folder-home-note">Fotos werden nach der Aufnahme automatisch in OneDrive hochgeladen. Bitte die Bestätigung abwarten.</p>}
-{!mobileOnly&&<p className="folder-home-note">Kamera oder Fotomediathek direkt in der App verwenden. Die Originalbilder werden unverändert nach OneDrive in den aktuellen Akt gespeichert.</p>}
-    <Card titel={mobileOnly?"TOP, Raum und Beschreibung":"Zuordnung der Bildaufnahmen"}>
+    <button className="btn ghost sm" disabled={busy} onClick={back}>← {fromForm?'Zur Besichtigung':fromDocuments?'Zu Unterlagen':'Zum Akt'}</button>
+    <p className="eyebrow" style={{marginTop:18}}>{akt.schadennummer||akt.aktenzeichen||'Akt'} · {akt.bezeichnung||akt.vn||''}</p>
+    <h2 className="sec">📷 Fotodokumentation</h2>
+    <p className="folder-home-note">Kamera oder Fotomediathek direkt in der App verwenden. Die Originalbilder werden unverändert nach OneDrive in den aktuellen Akt gespeichert.</p>
+    <Card titel="Zuordnung der Bildaufnahmen">
       <div className="grid g2">
         <Fld l="Top / besichtigte Einheit"><select value={unitKey} disabled={busy} onChange={e=>{setUnitKey(e.target.value);setRoomKey('__general');setError('');}}>
-          {!mobileOnly&&<option value="__general">Allgemein · gesamte Liegenschaft</option>}
+          <option value="__general">Allgemein · gesamte Liegenschaft</option>
           {allUnits.map(u=><option key={u.key} value={u.key}>{u.top}{u.etage?' · '+u.etage:''}{u.date?' ('+u.date+')':''}</option>)}
-          {!mobileOnly&&<option value="__manual">+ Top / Einheit frei eingeben</option>}
+          <option value="__manual">+ Top / Einheit frei eingeben</option>
         </select></Fld>
         {unitKey!=='__general'&&<Fld l="Raum"><select value={roomKey} disabled={busy} onChange={e=>{setRoomKey(e.target.value);setError('');}}>
-          {!mobileOnly&&<option value="__general">Allgemein · gesamte Einheit</option>}
+          <option value="__general">Allgemein · gesamte Einheit</option>
           {roomOptions.map(r=><option key={r.key} value={r.key}>{r.name}</option>)}
-          {!mobileOnly&&<option value="__manual">+ Raum frei eingeben</option>}
+          <option value="__manual">+ Raum frei eingeben</option>
         </select></Fld>}
       </div>
       {unitKey==='__manual'&&<div style={{marginTop:9}}><Txt l="Bezeichnung der Einheit / Top" v={manualTop} set={setManualTop} ph="z. B. Top 33"/></div>}
       {unitKey!=='__general'&&roomKey==='__manual'&&<div style={{marginTop:9}}><Txt l="Raumbezeichnung" v={manualRoom} set={setManualRoom} ph="z. B. Badezimmer"/></div>}
-      {!mobileOnly&&<div className="photo-location"><strong>Zielordner in OneDrive</strong><br/>{targetValid?photoPath:'Bitte Top und Raum vollständig auswählen.'}</div>}
-      <div style={{marginTop:8}}><Txt l="Fotobeschreibung" v={bildhinweis} set={setBildhinweis} ph="z. B. Feuchtehochzug oder Rohrbruch"/></div>
+      <div className="photo-location"><strong>Zielordner in OneDrive</strong><br/>{targetValid?photoPath:'Bitte Top und Raum vollständig auswählen.'}</div>
+      <div style={{marginTop:8}}><Txt l="Standard-Bildbeschreibung für neue Fotos" v={bildhinweis} set={setBildhinweis} ph="z. B. Feuchtehochzug oder Rohrbruch"/></div>
     </Card>
-    {!mobileOnly&&<Card titel="Mit dem iPhone fotografieren">
+    <Card titel="Mit dem iPhone fotografieren">
       <p className="folder-home-note">QR-Code nur einmal je Ortsaugenscheinprotokoll scannen. Auf dem iPhone direkt TOP/Wohnung und Raum auswählen und anschließend fotografieren. Microsoft-Anmeldung am iPhone ist erforderlich.</p>
       {iphoneUrl?<><div ref={qrRef} style={{background:'#fff',padding:12,display:'inline-block',minHeight:200,minWidth:200}} aria-label="QR-Code zur Fotoerfassung"></div><div style={{marginTop:10,overflowWrap:'anywhere'}}><button type="button" className="btn secondary sm" onClick={()=>navigator.clipboard?.writeText(iphoneUrl).then(()=>setProgress('iPhone-Link kopiert.')).catch(()=>setError('Link konnte nicht kopiert werden.'))}>iPhone-Link kopieren</button></div></>:<p className="folder-home-note">Den QR-Code bitte aus einem geöffneten Ortsaugenscheinprotokoll aufrufen.</p>}
-    </Card>}
-    <Card titel={mobileOnly?"Kamera":"Fotos aufnehmen / hinzufügen"}>
+    </Card>
+    <Card titel="Fotos aufnehmen / hinzufügen">
       {!cloud.connected&&<div className="statusbox warn">OneDrive ist nicht verbunden. Bitte zuerst in den Einstellungen anmelden.</div>}
       <div className="photo-controls">
         <button type="button" className="btn sig" disabled={busy||!cloud.connected||!targetValid} onClick={()=>cameraRef.current?.click()}>📷 Kamera öffnen</button>
@@ -4219,7 +4208,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       </div>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={addFiles}/>
       <input ref={albumRef} type="file" accept="image/*,.heic,.heif" multiple style={{display:'none'}} onChange={addFiles}/>
-      {!mobileOnly&&<p className="folder-home-note">Auf iPhone/iPad öffnet „Kamera öffnen“ je nach Browser direkt die rückseitige Kamera. Am PC erscheint die Dateiauswahl. HEIC und andere Originalformate bleiben unverändert; maximal 50 MB pro Bild.</p>}
+      <p className="folder-home-note">Auf iPhone/iPad öffnet „Kamera öffnen“ je nach Browser direkt die rückseitige Kamera. Am PC erscheint die Dateiauswahl. HEIC und andere Originalformate bleiben unverändert; maximal 50 MB pro Bild.</p>
       {pending.length>0&&<>
         <div className="photo-pending">{previews.map(x=><div key={x.id} className="photo-pending-item">
           {x.url?<img src={x.url} alt="Noch nicht gespeicherte Fotoauswahl"/>:<div style={{height:112,display:'flex',alignItems:'center',justifyContent:'center'}}>🖼️</div>}
@@ -4227,18 +4216,18 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
            <label style={{display:'block',fontSize:12,marginTop:7}}>Beschreibung Foto<input type="text" value={pending.find(p=>p.id===x.id)?.description||''} disabled={busy} placeholder="z. B. Quellungen am Türblatt" onChange={e=>setPending(prev=>prev.map(p=>p.id===x.id?{...p,description:e.target.value}:p))}/></label>
           <button className="btn ghost sm" style={{marginTop:7}} disabled={busy} onClick={()=>setPending(prev=>prev.filter(p=>p.id!==x.id))}>Entfernen</button>
         </div>)}</div>
-        {(!mobileOnly||error)&&<button type="button" className="btn sig" disabled={busy||!targetValid||!cloud.connected} onClick={upload}>{busy?'Übertrage Fotos …':`${pending.length} Foto${pending.length===1?'':'s'} speichern / erneut versuchen`}</button>}
+        <button type="button" className="btn sig" disabled={busy||!targetValid||!cloud.connected} onClick={upload}>{busy?'Übertrage Fotos …':`${pending.length} Foto${pending.length===1?'':'s'} im ausgewählten Ordner speichern`}</button>
       </>}
       {progress&&<div className="photo-progress" role="status">{progress}</div>}
       {error&&<div className="statusbox warn" style={{whiteSpace:'pre-wrap'}}>{error}</div>}
       {recent.length>0&&<div className="statusbox ok" role="status">✓ {recent.length} Foto(s) erfolgreich in OneDrive gespeichert. Weitere Aufnahmen können unmittelbar hinzugefügt werden.</div>}
     </Card>
-    {!mobileOnly&&<Card titel="Bereits abgelegte Bilder" extra={<button className="btn ghost sm" disabled={listing||busy||!targetValid} onClick={refresh}>↻ Aktualisieren</button>}>
+    <Card titel="Bereits abgelegte Bilder" extra={<button className="btn ghost sm" disabled={listing||busy||!targetValid} onClick={refresh}>↻ Aktualisieren</button>}>
       <p className="folder-home-note">Anzeige für den aktuell gewählten Top-/Raumordner; andere Tops über die Auswahl oben öffnen.</p>
       {listing&&<p className="folder-home-note">Fotoordner wird geladen …</p>}
       {!listing&&items.length===0&&<p className="folder-home-note">Hier wurden noch keine Fotos abgelegt.</p>}
       {items.map(it=><div key={it.id} className="photo-fileline"><span>🖼️</span><span style={{flex:1,minWidth:0,overflowWrap:'anywhere'}}>{it.name}<br/><span className="mono" style={{color:'var(--muted)',fontSize:11}}>{fmtBytes(it.size||0)}</span></span>{it.webUrl&&<a href={it.webUrl} target="_blank" rel="noopener noreferrer">In OneDrive öffnen ↗</a>}</div>)}
-    </Card>}
+    </Card>
   </div>;
 }
 
@@ -5918,30 +5907,6 @@ function App() {
     const found=akten.find(a=>a.cloudItemId===photoMobileSession.act||a.id===photoMobileSession.act);
     if(found)setView({mode:'photo-mobile',aktId:found.id,photoProtId:photoMobileSession.prot});
   },[akten,photoMobileSession]);
-  // Foto-Sitzung: aktuellen Protokollstand separat vom zentralen Speicher laden.
-  const [photoSyncStatus,setPhotoSyncStatus]=useState('');
-  useEffect(()=>{
-    if(!photoMobileSession||!cloud.connected)return;
-    let cancelled=false,reading=false;
-    const pull=async()=>{
-      if(reading||document.visibilityState==='hidden')return;
-      const match=akten.find(a=>a.cloudItemId===photoMobileSession.act||a.id===photoMobileSession.act);
-      if(!match?.cloudItemId)return;
-      reading=true;
-      try{
-        const fresh=await cloud.readWorkState(match);
-        const prots=fresh?.data?.protokolle;
-        if(!cancelled&&Array.isArray(prots)){
-          setAkten(previous=>previous.map(a=>a.cloudItemId===match.cloudItemId?{...a,protokolle:prots}:a));
-          setPhotoSyncStatus('Protokoll synchronisiert');
-        }else if(!cancelled)setPhotoSyncStatus('Kein zentral gespeichertes Protokoll gefunden');
-      }catch(e){if(!cancelled)setPhotoSyncStatus('Protokoll-Synchronisation fehlgeschlagen: '+(e.message||String(e)));}
-      finally{reading=false;}
-    };
-    pull();
-    const interval=setInterval(pull,12000);
-    return()=>{cancelled=true;clearInterval(interval);};
-  },[photoMobileSession?.act,photoMobileSession?.prot,cloud.connected,akten.find(a=>a.cloudItemId===photoMobileSession?.act||a.id===photoMobileSession?.act)?.cloudItemId]);
   const syncCloudAkten=async()=>{
     if(!cloud.connected){toast('OneDrive ist nicht verbunden');return;}
     try{
@@ -6024,7 +5989,7 @@ function App() {
 
   return (
     <div>
-      {view.mode === 'photo-mobile' && akt && <main style={{maxWidth:760,margin:'0 auto',padding:16}}>{!cloud.connected&&<div className="statusbox warn" style={{marginBottom:14}}>Microsoft ist am iPhone noch nicht verbunden. <button className="btn sig sm" onClick={()=>go({mode:'settings'})}>Microsoft anmelden</button></div>}<Fotoablage akt={akt} cloud={cloud} go={v=>v.mode==='akt'?setView({mode:'photo-mobile',aktId:akt.id,photoProtId:view.photoProtId||''}):go(v)} presetProtId={view.photoProtId||''} mobileOnly={true}/><button className="btn ghost sm" onClick={()=>{sessionStorage.removeItem('studiof_photo_session');setPhotoMobileSession(null);go({mode:'start'});}}>Foto-Sitzung beenden</button></main>}
+      {view.mode === 'photo-mobile' && akt && <main style={{maxWidth:760,margin:'0 auto',padding:16}}>{!cloud.connected&&<div className="statusbox warn" style={{marginBottom:14}}>Microsoft ist am iPhone noch nicht verbunden. <button className="btn sig sm" onClick={()=>go({mode:'settings'})}>Microsoft anmelden</button></div>}<Fotoablage akt={akt} cloud={cloud} go={v=>v.mode==='akt'?setView({mode:'photo-mobile',aktId:akt.id,photoProtId:view.photoProtId||''}):go(v)} presetProtId={view.photoProtId||''}/><button className="btn ghost sm" onClick={()=>{sessionStorage.removeItem('studiof_photo_session');setPhotoMobileSession(null);go({mode:'start'});}}>Foto-Sitzung beenden</button></main>}
       {photoMobileSession && !akt && <main style={{maxWidth:650,margin:'0 auto',padding:20}}><h2>iPhone-Fotoerfassung</h2><p>Der Ortsaugenschein wird in der gemeinsamen Testablage gesucht. Bitte das Microsoft-Konto verbinden und die Akten synchronisieren.</p><button className="btn sig" onClick={syncCloudAkten} disabled={!cloud.connected}>Akten synchronisieren</button><button className="btn secondary" style={{marginLeft:8}} onClick={()=>go({mode:'settings'})}>Microsoft-Anmeldung</button></main>}
       {view.mode !== 'assistenz' && view.mode !== 'photo-mobile' && (!photoMobileSession || view.mode==='settings') && <>
       <header className="top">
