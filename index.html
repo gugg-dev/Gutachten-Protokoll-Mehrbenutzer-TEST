@@ -4108,7 +4108,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
     const good=selected.filter(f=>!!photoExtension(f)&&f.size>0&&f.size<=PHOTO_MAX_BYTES);
     const skipped=selected.length-good.length;
     if(skipped)setError(skipped+' Datei(en) nicht übernommen: Nur Bilder bis 50 MB je Datei sind erlaubt.');
-    if(good.length)setPending(prev=>prev.concat(good.map(file=>({id:uid(),file}))));
+    if(good.length)setPending(prev=>prev.concat(good.map(file=>({id:uid(),file,description:bildhinweis.trim()}))));
   };
   const upload=async()=>{
     if(busy||!pending.length)return;
@@ -4123,8 +4123,13 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       try{
         const ext=photoExtension(f);if(!ext||f.size>PHOTO_MAX_BYTES)throw new Error('Ungültige oder zu große Bilddatei.');
         const nonce=uid().slice(-5);
-        const note=photoSegment(bildhinweis,'').slice(0,36);
-        const name='Foto_'+photoTimeStamp()+'_'+nonce+(note?'_'+note:'')+'.'+ext;
+        const description=photoSegment(x.description||bildhinweis,'Ohne_Beschreibung').slice(0,68);
+        const top=photoSegment(selectedUnit?.top||(unitKey==='__manual'?manualTop:'Liegenschaft'),'Liegenschaft');
+        const geschoss=photoSegment(selectedUnit?.etage||'Geschoss_unbekannt','Geschoss_unbekannt');
+        const dateSource=String(selectedUnit?.date||akt.besichtigungDatum||'');
+        const m=dateSource.match(/^(\d{4})-(\d{2})-(\d{2})/)||dateSource.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+        const dateLabel=m?(m[1].length===4?m[1]+'-'+m[2]+'-'+m[3]:m[3]+'-'+m[2]+'-'+m[1]):new Date().toLocaleDateString('sv-SE');
+        const name=[top,geschoss,description,dateLabel,nonce].join('_')+'.'+ext;
         const uploadFile=new File([f],name,{type:f.type||'application/octet-stream',lastModified:f.lastModified||Date.now()});
         const result=await cloud.uploadPhoto(akt,localSegments,uploadFile);
         if(!result?.id)throw new Error('OneDrive hat keine Dateibestätigung zurückgegeben.');
@@ -4164,7 +4169,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       {unitKey==='__manual'&&<div style={{marginTop:9}}><Txt l="Bezeichnung der Einheit / Top" v={manualTop} set={setManualTop} ph="z. B. Top 33"/></div>}
       {unitKey!=='__general'&&roomKey==='__manual'&&<div style={{marginTop:9}}><Txt l="Raumbezeichnung" v={manualRoom} set={setManualRoom} ph="z. B. Badezimmer"/></div>}
       <div className="photo-location"><strong>Zielordner in OneDrive</strong><br/>{targetValid?photoPath:'Bitte Top und Raum vollständig auswählen.'}</div>
-      <div style={{marginTop:8}}><Txt l="Optionaler kurzer Bildhinweis (im Dateinamen)" v={bildhinweis} set={setBildhinweis} ph="z. B. Feuchtehochzug oder Rohrbruch"/></div>
+      <div style={{marginTop:8}}><Txt l="Standard-Bildbeschreibung für neue Fotos" v={bildhinweis} set={setBildhinweis} ph="z. B. Feuchtehochzug oder Rohrbruch"/></div>
     </Card>
     <Card titel="Fotos aufnehmen / hinzufügen">
       {!cloud.connected&&<div className="statusbox warn">OneDrive ist nicht verbunden. Bitte zuerst in den Einstellungen anmelden.</div>}
@@ -4179,6 +4184,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
         <div className="photo-pending">{previews.map(x=><div key={x.id} className="photo-pending-item">
           {x.url?<img src={x.url} alt="Noch nicht gespeicherte Fotoauswahl"/>:<div style={{height:112,display:'flex',alignItems:'center',justifyContent:'center'}}>🖼️</div>}
           <div className="photo-name">{x.file.name||'Kameraaufnahme'} · {fmtBytes(x.file.size)}</div>
+           <label style={{display:'block',fontSize:12,marginTop:7}}>Beschreibung Foto<input type="text" value={pending.find(p=>p.id===x.id)?.description||''} disabled={busy} placeholder="z. B. Quellungen am Türblatt" onChange={e=>setPending(prev=>prev.map(p=>p.id===x.id?{...p,description:e.target.value}:p))}/></label>
           <button className="btn ghost sm" style={{marginTop:7}} disabled={busy} onClick={()=>setPending(prev=>prev.filter(p=>p.id!==x.id))}>Entfernen</button>
         </div>)}</div>
         <button type="button" className="btn sig" disabled={busy||!targetValid||!cloud.connected} onClick={upload}>{busy?'Übertrage Fotos …':`${pending.length} Foto${pending.length===1?'':'s'} im ausgewählten Ordner speichern`}</button>
