@@ -5145,6 +5145,7 @@ function App() {
   const [view, setView]   = useState({ mode:'start' });
   const [mobilePhotoLink,setMobilePhotoLink]=useState(()=>{const q=new URLSearchParams(location.search);if(q.get('photoAct')){const link={act:q.get('photoAct'),prot:q.get('photoProt')};sessionStorage.setItem('studiof_mobile_photo_link',JSON.stringify(link));return link;}try{return JSON.parse(sessionStorage.getItem('studiof_mobile_photo_link')||'null');}catch(_){return null;}});
   const [mobileSyncStatus,setMobileSyncStatus]=useState('');
+  useEffect(()=>{if(mobilePhotoLink&&msToken?.access_token&&sharedReady&&view.mode==='settings')setView({mode:'start'});},[mobilePhotoLink?.act,msToken?.access_token,sharedReady,view.mode]);
   const [sheet, setSheet] = useState(false);
   const [msg, setMsg]     = useState(null);
   const [railAuf, setRailAuf] = useState(false);
