@@ -3640,7 +3640,7 @@ function AktView({ akt, ordner, setAkt, go, loeschAkt, toast, cloud, agent, sour
 
   if (ordner === '__unterlagen') return <AktExplorer akt={akt} go={go} cloud={cloud} toast={toast} />;
 
-  if (ordner === '__fotos' || ordner === '01_Fotos Besichtigung') return <Fotoablage akt={akt} cloud={cloud} go={go} presetProtId={photoProtId} presetUnitId={photoUnitId} presetRoomId={photoRoomId} fromForm={photoFromForm} returnStep={photoReturnStep} fromDocuments={ordner==='01_Fotos Besichtigung'} />;
+  if (ordner === '__fotos' || ordner === '01_Fotos Besichtigung') return <div className="statusbox" style={{marginBottom:12}}><strong>Akt: {akt.schadennummer||akt.aktenzeichen||'Ohne Nummer'}</strong><div>{akt.bezeichnung||akt.vn||akt.ort||''}</div><small>{photoSyncStatus||'Synchronisiere Ortsaugenscheinprotokoll …'}</small></div><Fotoablage key={view.photoProtId||akt.id} akt={akt} cloud={cloud} go={go} presetProtId={photoProtId} presetUnitId={photoUnitId} presetRoomId={photoRoomId} fromForm={photoFromForm} returnStep={photoReturnStep} fromDocuments={ordner==='01_Fotos Besichtigung'} />;
 
   if (ordner && ordner !== '03_Ortsaugenschein') {
     const o = ORDNER.find(x=>x.key===ordner);
@@ -5909,6 +5909,30 @@ function App() {
     const found=akten.find(a=>a.cloudItemId===photoMobileSession.act||a.id===photoMobileSession.act);
     if(found)setView({mode:'photo-mobile',aktId:found.id,photoProtId:photoMobileSession.prot});
   },[akten,photoMobileSession]);
+  // Foto-Sitzung: aktuellen Protokollstand separat vom zentralen Speicher laden.
+  const [photoSyncStatus,setPhotoSyncStatus]=useState('');
+  useEffect(()=>{
+    if(!photoMobileSession||!cloud.connected)return;
+    let cancelled=false,reading=false;
+    const pull=async()=>{
+      if(reading||document.visibilityState==='hidden')return;
+      const match=akten.find(a=>a.cloudItemId===photoMobileSession.act||a.id===photoMobileSession.act);
+      if(!match?.cloudItemId)return;
+      reading=true;
+      try{
+        const fresh=await cloud.readWorkState(match);
+        const prots=fresh?.data?.protokolle;
+        if(!cancelled&&Array.isArray(prots)){
+          setAkten(previous=>previous.map(a=>a.cloudItemId===match.cloudItemId?{...a,protokolle:prots}:a));
+          setPhotoSyncStatus('Protokoll synchronisiert');
+        }else if(!cancelled)setPhotoSyncStatus('Kein zentral gespeichertes Protokoll gefunden');
+      }catch(e){if(!cancelled)setPhotoSyncStatus('Protokoll-Synchronisation fehlgeschlagen: '+(e.message||String(e)));}
+      finally{reading=false;}
+    };
+    pull();
+    const interval=setInterval(pull,12000);
+    return()=>{cancelled=true;clearInterval(interval);};
+  },[photoMobileSession?.act,photoMobileSession?.prot,cloud.connected,akten.find(a=>a.cloudItemId===photoMobileSession?.act||a.id===photoMobileSession?.act)?.cloudItemId]);
   const syncCloudAkten=async()=>{
     if(!cloud.connected){toast('OneDrive ist nicht verbunden');return;}
     try{
