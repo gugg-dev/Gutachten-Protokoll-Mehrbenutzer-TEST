@@ -767,6 +767,7 @@ button{font:inherit}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin></script>
 <script src="shared-storage.js?v=0.12.6-shared-test"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const APP_VERSION = '0.12.6-shared-test';
@@ -4045,6 +4046,79 @@ const photoExtension=f=>{
   const byType={'image/jpeg':'jpg','image/png':'png','image/heic':'heic','image/heif':'heif','image/webp':'webp','image/gif':'gif','image/tiff':'tiff','image/bmp':'bmp','image/avif':'avif'};
   return byType[String(f.type||'').toLowerCase()]||'';
 };
+
+/* Separates iPhone-Modul: keine Akt-Navigation, keine QR-Anzeige. */
+function MobilePhotoCapture({akt,protId,cloud,onExit,syncLabel}){
+  const camera=useRef(null), library=useRef(null);
+  const [top,setTop]=useState(''),[room,setRoom]=useState(''),[description,setDescription]=useState('');
+  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[failed,setFailed]=useState([]);
+  const prot=(akt.protokolle||[]).find(p=>p.id===protId);
+  const units=(prot?.wohnungen?.length?prot.wohnungen:[...(prot?[{id:'legacy-'+prot.id,top:'Einheit',etage:prot.geschoss||'',raeume:prot.raeume||[]}]:[])]);
+  useEffect(()=>{if(units.length&&!units.some(u=>u.id===top))setTop(units[0].id);},[protId,units.map(u=>u.id).join('|')]);
+  const unit=units.find(u=>u.id===top);
+  const rooms=unit?.raeume||[];
+  useEffect(()=>{if(rooms.length&&!rooms.some(r=>r.id===room))setRoom(rooms[0].id);},[top,rooms.map(r=>r.id).join('|')]);
+  const selectedRoom=rooms.find(r=>r.id===room);
+  const valid=!!(prot&&unit&&selectedRoom&&cloud.connected);
+  const send=async(files)=>{
+    if(!valid){setMessage('Bitte Verbindung, TOP und Raum prüfen.');return;}
+    const all=Array.from(files||[]);if(!all.length)return;
+    setBusy(true);setMessage('Fotos werden übertragen …');
+    const leftovers=[];let success=0;
+    const topFolder='Top_'+photoSegment(String(unit.top||'Einheit').replace(/^top[ _-]*/i,''),'Einheit');
+    const roomName=String(selectedRoom.bez||'Raum'),roomFolder=photoSegment(roomName,'Raum');
+    const duplicates=rooms.slice(0,rooms.findIndex(x=>x.id===selectedRoom.id)).filter(x=>String(x.bez||'').trim().toLowerCase()===roomName.trim().toLowerCase()).length;
+    const segments=[topFolder,roomFolder+(duplicates?'_'+(duplicates+1):'')];
+    for(const file of all){
+      try{
+        const ext=photoExtension(file);
+        if(!ext||file.size<=0||file.size>PHOTO_MAX_BYTES)throw Error('Ungültige Bilddatei oder größer als 50 MB');
+        const dateValue=String(prot.datum||akt.besichtigungDatum||'');
+        const iso=/^(\d{4})-(\d{2})-(\d{2})/.exec(dateValue);
+        const eu=/^(\d{2})\.(\d{2})\.(\d{4})/.exec(dateValue);
+        const date=iso?iso[0]:eu?[eu[3],eu[2],eu[1]].join('-'):new Date().toLocaleDateString('sv-SE');
+        const name=[photoSegment(unit.top||'Einheit'),photoSegment(unit.etage||prot.geschoss||'Geschoss'),photoSegment(description,'Ohne_Beschreibung'),date,crypto.randomUUID().slice(0,8)].join('_')+'.'+ext;
+        const upload=new File([file],name,{type:file.type||'application/octet-stream',lastModified:file.lastModified});
+        const saved=await cloud.uploadPhoto(akt,segments,upload);
+        if(!saved?.id)throw Error('OneDrive hat den Upload nicht bestätigt');
+        success++;
+      }catch(e){leftovers.push(file);setMessage('Fotoübertragung fehlgeschlagen: '+(e.message||String(e)));}
+    }
+    setFailed(leftovers);setBusy(false);
+    if(!leftovers.length)setMessage(success+' Foto(s) in OneDrive bestätigt.');
+  };
+  return <main style={{maxWidth:560,margin:'0 auto',padding:'18px 14px 36px'}}>
+    <div className="statusbox" style={{marginBottom:14}}>
+      <strong>Akt: {akt.schadennummer||akt.aktenzeichen||'Ohne Nummer'}</strong>
+      <div>{akt.bezeichnung||akt.vn||akt.ort||''}</div>
+      <small>{syncLabel||'Ortsaugenscheinprotokoll wird geladen'}</small>
+    </div>
+    <h2 className="sec">📷 Fotoaufnahme</h2>
+    {!cloud.connected&&<div className="statusbox warn">Microsoft-Anmeldung auf diesem iPhone erforderlich. <button className="btn sig sm" onClick={onExit}>Zur Anmeldung</button></div>}
+    {!prot&&<div className="statusbox warn">Das verknüpfte Ortsaugenscheinprotokoll wurde noch nicht zentral geladen. Bitte am iPad speichern und danach erneut synchronisieren.</div>}
+    <Card titel="Foto zuordnen">
+      <Fld l="TOP / Wohnung"><select value={top} disabled={busy} onChange={e=>{setTop(e.target.value);setRoom('');setMessage('');}}>
+        {units.map((u,i)=><option key={u.id} value={u.id}>{u.top||'Einheit '+(i+1)}{u.etage?' · '+u.etage:''}</option>)}
+      </select></Fld>
+      <Fld l="Raum"><select value={room} disabled={busy} onChange={e=>setRoom(e.target.value)}>
+        {rooms.map((r,i)=><option key={r.id||i} value={r.id}>{r.bez||'Raum '+(i+1)}</option>)}
+      </select></Fld>
+      <Txt l="Fotobeschreibung" v={description} set={setDescription} ph="z. B. Quellungen am Türblatt"/>
+    </Card>
+    <Card titel="Fotos">
+      <div className="photo-controls">
+        <button className="btn sig" disabled={!valid||busy} onClick={()=>camera.current?.click()}>📷 Kamera öffnen</button>
+        <button className="btn secondary" disabled={!valid||busy} onClick={()=>library.current?.click()}>Fotos auswählen</button>
+      </div>
+      <input ref={camera} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={e=>{const f=e.target.files;e.target.value='';send(f);}}/>
+      <input ref={library} type="file" accept="image/*,.heic,.heif" multiple style={{display:'none'}} onChange={e=>{const f=e.target.files;e.target.value='';send(f);}}/>
+      {message&&<div className={failed.length?'statusbox warn':'photo-progress'} role="status">{message}</div>}
+      {failed.length>0&&<button className="btn sig" disabled={busy||!valid} onClick={()=>send(failed)}>Fehlgeschlagene Fotos erneut übertragen</button>}
+      <p className="folder-home-note">Nach bestätigter Übertragung kannst du sofort weitere Fotos aufnehmen oder TOP und Raum wechseln. Originalbilder bleiben unverändert.</p>
+    </Card>
+  </main>;
+}
+
 function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='',fromForm=false,returnStep=0,fromDocuments=false}){
   const cameraRef=useRef(null),albumRef=useRef(null);
   const [unitKey,setUnitKey]=useState(presetUnitId?(presetProtId+'|'+presetUnitId):'__general');
@@ -5058,6 +5132,8 @@ function App() {
   const [akten, setAkten] = useState(() => load(STORE, []));
   const [pool, setPool]   = useState(() => load(POOL, []));
   const [view, setView]   = useState({ mode:'start' });
+  const [mobilePhotoLink,setMobilePhotoLink]=useState(()=>{const q=new URLSearchParams(location.search);return q.get('photoAct')?{act:q.get('photoAct'),prot:q.get('photoProt')}:null;});
+  const [mobileSyncStatus,setMobileSyncStatus]=useState('');
   const [sheet, setSheet] = useState(false);
   const [msg, setMsg]     = useState(null);
   const [railAuf, setRailAuf] = useState(false);
@@ -5850,6 +5926,32 @@ function App() {
     setAkten(prev=>{const i=prev.findIndex(a=>a.cloudItemId===found.cloudItemId);return i<0?prev.concat(merged):prev.map((a,j)=>j===i?merged:a);});
     go({mode:'akt',aktId:merged.id});
   };
+  useEffect(()=>{
+    if(!mobilePhotoLink||!cloud.connected)return;
+    let stopped=false,working=false;
+    async function update(){
+      if(working||document.visibilityState==='hidden')return;
+      working=true;
+      try{
+        let found=akten.find(a=>a.cloudItemId===mobilePhotoLink.act||a.id===mobilePhotoLink.act);
+        if(!found){
+          const scanned=await cloud.scanActive();
+          found=scanned.find(a=>a.cloudItemId===mobilePhotoLink.act);
+          if(found&&!stopped)setAkten(prev=>prev.some(a=>a.cloudItemId===found.cloudItemId)?prev:[...prev,found]);
+        }
+        if(found?.cloudItemId){
+          const data=await cloud.readWorkState(found);
+          if(!stopped&&Array.isArray(data?.data?.protokolle)){
+            setAkten(prev=>prev.map(a=>a.cloudItemId===found.cloudItemId?{...a,protokolle:data.data.protokolle}:a));
+            setMobileSyncStatus('TOP und Räume synchronisiert');
+          }
+        }
+      }catch(e){if(!stopped)setMobileSyncStatus('Synchronisation: '+(e.message||String(e)));}
+      finally{working=false;}
+    }
+    update();const timer=setInterval(update,15000);
+    return()=>{stopped=true;clearInterval(timer);};
+  },[mobilePhotoLink?.act,mobilePhotoLink?.prot,cloud.connected]);
   const syncCloudAkten=async()=>{
     if(!cloud.connected){toast('OneDrive ist nicht verbunden');return;}
     try{
@@ -5932,7 +6034,10 @@ function App() {
 
   return (
     <div>
-      {view.mode !== 'assistenz' && <>
+      {mobilePhotoLink&&(()=>{const a=akten.find(x=>x.cloudItemId===mobilePhotoLink.act||x.id===mobilePhotoLink.act);return a
+        ?<MobilePhotoCapture akt={a} protId={mobilePhotoLink.prot} cloud={cloud} syncLabel={mobileSyncStatus} onExit={()=>setView({mode:'settings'})}/>
+        :<main style={{padding:24}}><h2>iPhone-Fotoaufnahme</h2><p>{mobileSyncStatus||'Akt wird aus OneDrive geladen …'}</p>{!cloud.connected&&<button className="btn sig" onClick={()=>setView({mode:'settings'})}>Microsoft anmelden</button>}</main>;})()}
+      {!mobilePhotoLink&&view.mode !== 'assistenz' && <>
       <header className="top">
         <button className="btn sig sm tabsw" onClick={() => setRailAuf(!railAuf)}>Ablage</button>
         <h1>Studio F · Gutachten</h1>
