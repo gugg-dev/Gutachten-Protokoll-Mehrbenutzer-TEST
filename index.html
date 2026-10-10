@@ -4112,6 +4112,20 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
     },180);
     return()=>{cancelled=true;clearTimeout(t);};
   },[akt.id,locationKey,cloud.connected]);
+  // Neue iPhone-Aufnahmen im geöffneten iPad-Raum automatisch sichtbar machen.
+  useEffect(()=>{
+    if(!cloud.connected||!targetValid)return;
+    let active=true;
+    const tick=async()=>{
+      if(document.visibilityState!=='visible'||busy)return;
+      try{
+        const list=await cloud.listPhotos(akt,segments);
+        if(active)setItems(list.filter(x=>!x.folder).sort((a,b)=>String(b.name||'').localeCompare(String(a.name||''))));
+      }catch(e){console.warn('Fotoaktualisierung:',e);}
+    };
+    const timer=setInterval(tick,15000);
+    return()=>{active=false;clearInterval(timer);};
+  },[akt.id,locationKey,cloud.connected,busy]);
   const addFiles=e=>{
     const selected=Array.from(e.target.files||[]);
     e.target.value=''; if(!selected.length)return;
