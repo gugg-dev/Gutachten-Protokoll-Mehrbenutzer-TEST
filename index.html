@@ -4055,7 +4055,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
   const [pending,setPending]=useState([]),[recent,setRecent]=useState([]);
   const [items,setItems]=useState([]),[listing,setListing]=useState(false);
   const [busy,setBusy]=useState(false),[progress,setProgress]=useState(''),[error,setError]=useState('');
-  const allUnits=(akt.protokolle||[]).flatMap((p,pi)=>{
+  const allUnits=(akt.protokolle||[]).filter(p=>!presetProtId||p.id===presetProtId).flatMap((p,pi)=>{
     const units=(p.wohnungen&&p.wohnungen.length)?p.wohnungen:
       [{id:'legacy-'+p.id,top:'',etage:p.geschoss||'',raeume:p.raeume||[]}];
     return units.map((w,wi)=>({key:p.id+'|'+w.id,top:w.top||('Einheit '+(wi+1)),
@@ -4081,10 +4081,10 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
   const targetValid=segments.length>0;
   const photoPath='01_Fotos Besichtigung'+(segments.length?'/'+segments.join('/'):'');
   const iphoneUrl=useMemo(()=>{
-    if(!targetValid||unitKey==='__manual'||roomKey==='__manual')return '';
-    const q=new URLSearchParams({photoAct:akt.cloudItemId||akt.id,photoUnit:unitKey,photoRoom:roomKey});
+    if(!presetProtId)return '';
+    const q=new URLSearchParams({photoAct:akt.cloudItemId||akt.id,photoProt:presetProtId});
     return location.origin+location.pathname+'?'+q.toString();
-  },[akt.id,akt.cloudItemId,unitKey,roomKey,targetValid]);
+  },[akt.id,akt.cloudItemId,presetProtId]);
   useEffect(()=>{
     if(!qrRef.current)return;
     qrRef.current.replaceChildren();
@@ -4197,8 +4197,8 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       <div style={{marginTop:8}}><Txt l="Standard-Bildbeschreibung für neue Fotos" v={bildhinweis} set={setBildhinweis} ph="z. B. Feuchtehochzug oder Rohrbruch"/></div>
     </Card>
     <Card titel="Mit dem iPhone fotografieren">
-      <p className="folder-home-note">QR-Code am iPhone scannen. Es öffnet sich dieselbe Test-App mit der ausgewählten Akt-, TOP- und Raumzuordnung. Microsoft-Anmeldung auf dem iPhone ist erforderlich.</p>
-      {iphoneUrl?<><div ref={qrRef} style={{background:'#fff',padding:12,display:'inline-block',minHeight:200,minWidth:200}} aria-label="QR-Code zur Fotoerfassung"></div><div style={{marginTop:10,overflowWrap:'anywhere'}}><button type="button" className="btn secondary sm" onClick={()=>navigator.clipboard?.writeText(iphoneUrl).then(()=>setProgress('iPhone-Link kopiert.')).catch(()=>setError('Link konnte nicht kopiert werden.'))}>iPhone-Link kopieren</button></div></>:<p className="folder-home-note">Für die iPhone-Übergabe bitte eine im Ortsaugenscheinprotokoll angelegte Einheit und einen Raum auswählen. Freitext-Zuordnungen werden noch nicht übertragen.</p>}
+      <p className="folder-home-note">QR-Code nur einmal je Ortsaugenscheinprotokoll scannen. Auf dem iPhone direkt TOP/Wohnung und Raum auswählen und anschließend fotografieren. Microsoft-Anmeldung am iPhone ist erforderlich.</p>
+      {iphoneUrl?<><div ref={qrRef} style={{background:'#fff',padding:12,display:'inline-block',minHeight:200,minWidth:200}} aria-label="QR-Code zur Fotoerfassung"></div><div style={{marginTop:10,overflowWrap:'anywhere'}}><button type="button" className="btn secondary sm" onClick={()=>navigator.clipboard?.writeText(iphoneUrl).then(()=>setProgress('iPhone-Link kopiert.')).catch(()=>setError('Link konnte nicht kopiert werden.'))}>iPhone-Link kopieren</button></div></>:<p className="folder-home-note">Den QR-Code bitte aus einem geöffneten Ortsaugenscheinprotokoll aufrufen.</p>}
     </Card>
     <Card titel="Fotos aufnehmen / hinzufügen">
       {!cloud.connected&&<div className="statusbox warn">OneDrive ist nicht verbunden. Bitte zuerst in den Einstellungen anmelden.</div>}
@@ -5093,6 +5093,7 @@ function App() {
   const [akten, setAkten] = useState(() => load(STORE, []));
   const [pool, setPool]   = useState(() => load(POOL, []));
   const [view, setView]   = useState({ mode:'start' });
+  const [photoMobileSession,setPhotoMobileSession]=useState(()=>{try{const q=new URLSearchParams(location.search);return q.get('photoAct')?{act:q.get('photoAct'),prot:q.get('photoProt')||''}:JSON.parse(sessionStorage.getItem('studiof_photo_session')||'null');}catch(_){return null;}});
   const [sheet, setSheet] = useState(false);
   const [msg, setMsg]     = useState(null);
   const [railAuf, setRailAuf] = useState(false);
@@ -5889,17 +5890,23 @@ function App() {
   useEffect(()=>{
     const q=new URLSearchParams(location.search),id=q.get('photoAct');
     if(!id)return;
+    const session={act:id,prot:q.get('photoProt')||''};
+    sessionStorage.setItem('studiof_photo_session',JSON.stringify(session));
+    setPhotoMobileSession(session);
     const found=akten.find(a=>a.cloudItemId===id||a.id===id);
     if(found){
-      const unit=q.get('photoUnit')||'__general', room=q.get('photoRoom')||'__general';
-      const parts=unit.split('|');
-      setView({mode:'akt',aktId:found.id,ordner:'__fotos',photoProtId:parts.length===2?parts[0]:'',photoUnitId:parts.length===2?parts[1]:'',photoRoomId:room==='__general'?'':room});
+      setView({mode:'photo-mobile',aktId:found.id,photoProtId:session.prot});
       history.replaceState({},'',location.pathname);
     }else if(cloud.connected&&!photoLinkSyncAttempt.current){
       photoLinkSyncAttempt.current=true;
       syncCloudAkten();
     }
   },[akten,cloud.connected]);
+  useEffect(()=>{
+    if(!photoMobileSession||view.mode==='photo-mobile')return;
+    const found=akten.find(a=>a.cloudItemId===photoMobileSession.act||a.id===photoMobileSession.act);
+    if(found)setView({mode:'photo-mobile',aktId:found.id,photoProtId:photoMobileSession.prot});
+  },[akten,photoMobileSession]);
   const syncCloudAkten=async()=>{
     if(!cloud.connected){toast('OneDrive ist nicht verbunden');return;}
     try{
@@ -5982,7 +5989,9 @@ function App() {
 
   return (
     <div>
-      {view.mode !== 'assistenz' && <>
+      {view.mode === 'photo-mobile' && akt && <main style={{maxWidth:760,margin:'0 auto',padding:16}}><Fotoablage akt={akt} cloud={cloud} go={go} presetProtId={view.photoProtId||''}/><button className="btn ghost sm" onClick={()=>{sessionStorage.removeItem('studiof_photo_session');setPhotoMobileSession(null);go({mode:'start'});}}>Foto-Sitzung beenden</button></main>}
+      {photoMobileSession && !akt && <main style={{maxWidth:650,margin:'0 auto',padding:20}}><h2>iPhone-Fotoerfassung</h2><p>Der Ortsaugenschein wird in der gemeinsamen Testablage gesucht. Bitte das Microsoft-Konto verbinden und die Akten synchronisieren.</p><button className="btn sig" onClick={syncCloudAkten} disabled={!cloud.connected}>Akten synchronisieren</button><button className="btn secondary" style={{marginLeft:8}} onClick={()=>go({mode:'settings'})}>Microsoft-Anmeldung</button></main>}
+      {view.mode !== 'assistenz' && view.mode !== 'photo-mobile' && (!photoMobileSession || view.mode==='settings') && <>
       <header className="top">
         <button className="btn sig sm tabsw" onClick={() => setRailAuf(!railAuf)}>Ablage</button>
         <h1>Studio F · Gutachten</h1>
