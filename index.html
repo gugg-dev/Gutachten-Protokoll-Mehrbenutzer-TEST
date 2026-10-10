@@ -4169,6 +4169,15 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
     setBusy(false);
     if(saved.length)await refresh();
   };
+  // Am iPhone erfolgt der Upload unmittelbar nach der Aufnahme; Fehler bleiben sichtbar und erneut speicherbar.
+  const lastAutoBatch=useRef('');
+  useEffect(()=>{
+    if(!mobileOnly||busy||!pending.length||!cloud.connected||!targetValid)return;
+    const batch=pending.map(p=>p.id).join('|');
+    if(lastAutoBatch.current===batch)return;
+    lastAutoBatch.current=batch;
+    upload();
+  },[mobileOnly,pending,cloud.connected,targetValid,busy]);
   const back=()=>{
     if(busy)return;
     if(pending.length&&!confirm('Es sind noch nicht gespeicherte Fotos ausgewählt. Fotoseite trotzdem verlassen?'))return;
@@ -4178,7 +4187,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
   return <div>
 {!mobileOnly&&<button className="btn ghost sm" disabled={busy} onClick={back}>← {fromForm?'Zur Besichtigung':fromDocuments?'Zu Unterlagen':'Zum Akt'}</button>}
 {!mobileOnly&&<p className="eyebrow" style={{marginTop:18}}>{akt.schadennummer||akt.aktenzeichen||'Akt'} · {akt.bezeichnung||akt.vn||''}</p>}
-    <h2 className="sec">📷 {mobileOnly?"Fotoaufnahme":"Fotodokumentation"}</h2>
+    <h2 className="sec">📷 {mobileOnly?"Fotoaufnahme":"Fotodokumentation"}</h2>{mobileOnly&&<p className="folder-home-note">Fotos werden nach der Aufnahme automatisch in OneDrive hochgeladen. Bitte die Bestätigung abwarten.</p>}
 {!mobileOnly&&<p className="folder-home-note">Kamera oder Fotomediathek direkt in der App verwenden. Die Originalbilder werden unverändert nach OneDrive in den aktuellen Akt gespeichert.</p>}
     <Card titel={mobileOnly?"TOP, Raum und Beschreibung":"Zuordnung der Bildaufnahmen"}>
       <div className="grid g2">
@@ -4218,7 +4227,7 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
            <label style={{display:'block',fontSize:12,marginTop:7}}>Beschreibung Foto<input type="text" value={pending.find(p=>p.id===x.id)?.description||''} disabled={busy} placeholder="z. B. Quellungen am Türblatt" onChange={e=>setPending(prev=>prev.map(p=>p.id===x.id?{...p,description:e.target.value}:p))}/></label>
           <button className="btn ghost sm" style={{marginTop:7}} disabled={busy} onClick={()=>setPending(prev=>prev.filter(p=>p.id!==x.id))}>Entfernen</button>
         </div>)}</div>
-        <button type="button" className="btn sig" disabled={busy||!targetValid||!cloud.connected} onClick={upload}>{busy?'Übertrage Fotos …':`${pending.length} Foto${pending.length===1?'':'s'} speichern`}</button>
+        {(!mobileOnly||error)&&<button type="button" className="btn sig" disabled={busy||!targetValid||!cloud.connected} onClick={upload}>{busy?'Übertrage Fotos …':`${pending.length} Foto${pending.length===1?'':'s'} speichern / erneut versuchen`}</button>}
       </>}
       {progress&&<div className="photo-progress" role="status">{progress}</div>}
       {error&&<div className="statusbox warn" style={{whiteSpace:'pre-wrap'}}>{error}</div>}
