@@ -767,6 +767,7 @@ button{font:inherit}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin></script>
 <script src="shared-storage.js?v=0.12.6-shared-test"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const APP_VERSION = '0.12.6-shared-test';
@@ -4046,7 +4047,7 @@ const photoExtension=f=>{
   return byType[String(f.type||'').toLowerCase()]||'';
 };
 function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='',fromForm=false,returnStep=0,fromDocuments=false}){
-  const cameraRef=useRef(null),albumRef=useRef(null);
+  const cameraRef=useRef(null),albumRef=useRef(null),qrRef=useRef(null);
   const [unitKey,setUnitKey]=useState(presetUnitId?(presetProtId+'|'+presetUnitId):'__general');
   const [roomKey,setRoomKey]=useState(presetRoomId||'__general');
   const [manualTop,setManualTop]=useState(''),[manualRoom,setManualRoom]=useState('');
@@ -4079,6 +4080,16 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
   const segments=topSegment&&(unitKey==='__general'||roomSegment)?[topSegment,...(roomSegment?[roomSegment]:[])]:[];
   const targetValid=segments.length>0;
   const photoPath='01_Fotos Besichtigung'+(segments.length?'/'+segments.join('/'):'');
+  const iphoneUrl=useMemo(()=>{
+    if(!targetValid||unitKey==='__manual'||roomKey==='__manual')return '';
+    const q=new URLSearchParams({photoAct:akt.cloudItemId||akt.id,photoUnit:unitKey,photoRoom:roomKey});
+    return location.origin+location.pathname+'?'+q.toString();
+  },[akt.id,akt.cloudItemId,unitKey,roomKey,targetValid]);
+  useEffect(()=>{
+    if(!qrRef.current)return;
+    qrRef.current.replaceChildren();
+    if(iphoneUrl&&window.QRCode){new window.QRCode(qrRef.current,{text:iphoneUrl,width:176,height:176,correctLevel:window.QRCode.CorrectLevel.M});}
+  },[iphoneUrl]);
   const previews=useMemo(()=>pending.map(x=>({id:x.id,file:x.file,
     url:x.file.type?.startsWith('image/')&&!/heic|heif/i.test(x.file.type||'')?URL.createObjectURL(x.file):''})),[pending]);
   useEffect(()=>()=>previews.forEach(x=>{if(x.url)URL.revokeObjectURL(x.url);}),[previews]);
@@ -4170,6 +4181,10 @@ function Fotoablage({akt,cloud,go,presetProtId='',presetUnitId='',presetRoomId='
       {unitKey!=='__general'&&roomKey==='__manual'&&<div style={{marginTop:9}}><Txt l="Raumbezeichnung" v={manualRoom} set={setManualRoom} ph="z. B. Badezimmer"/></div>}
       <div className="photo-location"><strong>Zielordner in OneDrive</strong><br/>{targetValid?photoPath:'Bitte Top und Raum vollständig auswählen.'}</div>
       <div style={{marginTop:8}}><Txt l="Standard-Bildbeschreibung für neue Fotos" v={bildhinweis} set={setBildhinweis} ph="z. B. Feuchtehochzug oder Rohrbruch"/></div>
+    </Card>
+    <Card titel="Mit dem iPhone fotografieren">
+      <p className="folder-home-note">QR-Code am iPhone scannen. Es öffnet sich dieselbe Test-App mit der ausgewählten Akt-, TOP- und Raumzuordnung. Microsoft-Anmeldung auf dem iPhone ist erforderlich.</p>
+      {iphoneUrl?<><div ref={qrRef} style={{background:'#fff',padding:12,display:'inline-block',minHeight:200,minWidth:200}} aria-label="QR-Code zur Fotoerfassung"></div><div style={{marginTop:10,overflowWrap:'anywhere'}}><button type="button" className="btn secondary sm" onClick={()=>navigator.clipboard?.writeText(iphoneUrl).then(()=>setProgress('iPhone-Link kopiert.')).catch(()=>setError('Link konnte nicht kopiert werden.'))}>iPhone-Link kopieren</button></div></>:<p className="folder-home-note">Für die iPhone-Übergabe bitte eine im Ortsaugenscheinprotokoll angelegte Einheit und einen Raum auswählen. Freitext-Zuordnungen werden noch nicht übertragen.</p>}
     </Card>
     <Card titel="Fotos aufnehmen / hinzufügen">
       {!cloud.connected&&<div className="statusbox warn">OneDrive ist nicht verbunden. Bitte zuerst in den Einstellungen anmelden.</div>}
@@ -5856,6 +5871,21 @@ function App() {
     setAkten(prev=>{const i=prev.findIndex(a=>a.cloudItemId===found.cloudItemId);return i<0?prev.concat(merged):prev.map((a,j)=>j===i?merged:a);});
     go({mode:'akt',aktId:merged.id});
   };
+  const photoLinkSyncAttempt=useRef(false);
+  useEffect(()=>{
+    const q=new URLSearchParams(location.search),id=q.get('photoAct');
+    if(!id)return;
+    const found=akten.find(a=>a.cloudItemId===id||a.id===id);
+    if(found){
+      const unit=q.get('photoUnit')||'__general', room=q.get('photoRoom')||'__general';
+      const parts=unit.split('|');
+      setView({mode:'akt',aktId:found.id,ordner:'__fotos',photoProtId:parts.length===2?parts[0]:'',photoUnitId:parts.length===2?parts[1]:'',photoRoomId:room==='__general'?'':room});
+      history.replaceState({},'',location.pathname);
+    }else if(cloud.connected&&!photoLinkSyncAttempt.current){
+      photoLinkSyncAttempt.current=true;
+      syncCloudAkten();
+    }
+  },[akten,cloud.connected]);
   const syncCloudAkten=async()=>{
     if(!cloud.connected){toast('OneDrive ist nicht verbunden');return;}
     try{
