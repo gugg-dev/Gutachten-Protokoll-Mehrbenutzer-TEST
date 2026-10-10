@@ -5989,7 +5989,7 @@ function App() {
 
   return (
     <div>
-      {view.mode === 'photo-mobile' && akt && <main style={{maxWidth:760,margin:'0 auto',padding:16}}><Fotoablage akt={akt} cloud={cloud} go={go} presetProtId={view.photoProtId||''}/><button className="btn ghost sm" onClick={()=>{sessionStorage.removeItem('studiof_photo_session');setPhotoMobileSession(null);go({mode:'start'});}}>Foto-Sitzung beenden</button></main>}
+      {view.mode === 'photo-mobile' && akt && <main style={{maxWidth:760,margin:'0 auto',padding:16}}>{!cloud.connected&&<div className="statusbox warn" style={{marginBottom:14}}>Microsoft ist am iPhone noch nicht verbunden. <button className="btn sig sm" onClick={()=>go({mode:'settings'})}>Microsoft anmelden</button></div>}<Fotoablage akt={akt} cloud={cloud} go={v=>v.mode==='akt'?setView({mode:'photo-mobile',aktId:akt.id,photoProtId:view.photoProtId||''}):go(v)} presetProtId={view.photoProtId||''}/><button className="btn ghost sm" onClick={()=>{sessionStorage.removeItem('studiof_photo_session');setPhotoMobileSession(null);go({mode:'start'});}}>Foto-Sitzung beenden</button></main>}
       {photoMobileSession && !akt && <main style={{maxWidth:650,margin:'0 auto',padding:20}}><h2>iPhone-Fotoerfassung</h2><p>Der Ortsaugenschein wird in der gemeinsamen Testablage gesucht. Bitte das Microsoft-Konto verbinden und die Akten synchronisieren.</p><button className="btn sig" onClick={syncCloudAkten} disabled={!cloud.connected}>Akten synchronisieren</button><button className="btn secondary" style={{marginLeft:8}} onClick={()=>go({mode:'settings'})}>Microsoft-Anmeldung</button></main>}
       {view.mode !== 'assistenz' && view.mode !== 'photo-mobile' && (!photoMobileSession || view.mode==='settings') && <>
       <header className="top">
